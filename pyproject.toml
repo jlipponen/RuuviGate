@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "ruuviazure"
+version = "0.1.0"
+description = ""
+authors = ["Jan Lipponen <jan.lipponen@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+ruuvitag-sensor = "^1.2.0"
+azure-iot-device = "^2.9.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

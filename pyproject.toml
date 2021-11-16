@@ -8,6 +8,7 @@ authors = ["Jan Lipponen <jan.lipponen@gmail.com>"]
 python = "^3.8"
 ruuvitag-sensor = "^1.2.0"
 azure-iot-device = "^2.9.0"
+PyYAML = "^6.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

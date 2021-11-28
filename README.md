@@ -1,7 +1,7 @@
 # RuuviAzureGateway
-Python3 application to publish RuuviTag data to Azure IoT Central
+Python3 application to push RuuviTag data to cloud
 
-Following cofiguration files are needed to run the application:
+Following cofiguration files are needed:
 
 ## Azure configuration file (YAML)
 IOTHUB_DEVICE_DPS_ID_SCOPE: "your-device-id-scope" \
@@ -21,4 +21,4 @@ RU:UV:IM:AC:ADD:R1: 5
 .
 .
 
-Notice that your device's datamodel should support the amount of Ruuvi's you specify
+Notice that your device's (Azure IoT Central) datamodel should support the amount of Ruuvi's you specify

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "ruuviazure"
+name = "ruuvigate"
 version = "0.1.0"
 description = ""
 authors = ["Jan Lipponen <jan.lipponen@gmail.com>"]

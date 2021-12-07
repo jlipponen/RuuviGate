@@ -48,6 +48,7 @@ def provision(args, azure_config):
     azure_config[AzureParams.DeviceHostName.value] = device_host
     return azure_config
 
+
 def parse_configurations(args):
     with open(args.azure_confs, "r") as stream:
         try:
@@ -93,17 +94,22 @@ def main(args, azure_config, ruuvi_macs):
         while True:
             datas = RuuviTagSensor.get_data_for_sensors(
                 ruuvi_macs.keys(), args.interval)
-            for mac, data in datas.items():
-                if mac in ruuvi_macs:
-                    azureClient.buffer_data(
-                        {TelemNames.Temperature.value+str(ruuvi_macs[mac]): data["temperature"],
-                         TelemNames.Humidity.value+str(ruuvi_macs[mac]): data["humidity"],
-                         TelemNames.Pressure.value+str(ruuvi_macs[mac]): data["pressure"],
-                         TelemNames.Battery.value+str(ruuvi_macs[mac]): data["battery"],
-                         TelemNames.Sequence.value+str(ruuvi_macs[mac]): data["measurement_sequence_number"]}
-                    )
-                else:
-                    logging.warn("Received data from an unknown MAC: " + mac)
+            if datas:
+                for mac, data in datas.items():
+                    if mac in ruuvi_macs:
+                        azureClient.buffer_data(
+                            {TelemNames.Temperature.value+str(ruuvi_macs[mac]): data["temperature"],
+                             TelemNames.Humidity.value+str(ruuvi_macs[mac]): data["humidity"],
+                             TelemNames.Pressure.value+str(ruuvi_macs[mac]): data["pressure"],
+                             TelemNames.Battery.value+str(ruuvi_macs[mac]): data["battery"],
+                             TelemNames.Sequence.value+str(ruuvi_macs[mac]): data["measurement_sequence_number"]}
+                        )
+                    else:
+                        logging.warn(
+                            "Received data from an unknown RuuviTag: " + mac)
+            else:
+                logging.warn(
+                    "Could not ready any RuuviTag data. Please check that the specified RuuviTag(s) are in range.")
             azureClient.send_data()
     except KeyboardInterrupt:
         logging.info("Exiting")

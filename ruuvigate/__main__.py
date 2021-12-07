@@ -1,11 +1,11 @@
-from ruuvitag_sensor.ruuvi import RuuviTagSensor
-from azure_client import AzureClient
-from enum import Enum
 import sys
 import os
 import argparse
 import yaml
 import logging
+from enum import Enum
+
+from ruuvitag_sensor.ruuvi import RuuviTagSensor
 
 
 class AzureParams(Enum):

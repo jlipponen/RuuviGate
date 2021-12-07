@@ -1,10 +1,11 @@
-from azure.iot.device import IoTHubDeviceClient
-from azure.iot.device import ProvisioningDeviceClient
-from azure.iot.device import Message
-from enum import Enum
 import json
 import uuid
 import logging
+from enum import Enum
+
+from azure.iot.device import IoTHubDeviceClient
+from azure.iot.device import ProvisioningDeviceClient
+from azure.iot.device import Message
 
 
 class AzureClient:
@@ -36,7 +37,7 @@ class AzureClient:
             self.client_ = None
             raise ConnectionError()
 
-    def send_data(self, data = {}):
+    def send_data(self, data={}):
         """
             param data: dictionary of values to send
         """
@@ -46,7 +47,7 @@ class AzureClient:
         msg.content_encoding = AzureClient.Message.Encoding.value
         msg.content_type = AzureClient.Message.ContentType.value
         msg.message_id = uuid.uuid4()
-        
+
         self.client_.send_message(msg)
         logging.info("Sent message " + str(data) +
                      " with id " + str(msg.message_id))

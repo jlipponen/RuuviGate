@@ -7,6 +7,7 @@ from enum import Enum
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
 
+from .azure_client import AzureClient
 
 class AzureParams(Enum):
     DeviceKey = "IOTHUB_DEVICE_DPS_DEVICE_KEY"

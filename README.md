@@ -1,5 +1,5 @@
-# RuuviAzureGateway
-Python3 application to push RuuviTag data to cloud
+# RuuviGate
+Python3 application to push RuuviTag data to cloud. Only Azure IoT Central is currently supported.
 
 Following cofiguration files are needed:
 

@@ -23,7 +23,8 @@ setup(
     ],
     install_requires=[
         'azure-iot-device>=2.9.0',
-        'ruuvitag-sensor>=1.2.0'
+        'ruuvitag-sensor>=1.2.0',
+        'PyYAML>=6.0'
     ],
     packages=[
         'ruuvigate'

@@ -1,5 +1,6 @@
 import io
 from setuptools import setup
+from setuptools import find_packages
 
 with io.open('README.md', encoding='utf-8') as f:
     readme = f.read()
@@ -15,6 +16,8 @@ setup(
     url = 'https://github.com/jlipponen/RuuviGate',
     license='MIT',
     python_requires='>=3.8',
+    packages=find_packages(),
+    include_package_data=True,
     classifiers = [
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 3.8',
@@ -26,8 +29,4 @@ setup(
         'ruuvitag-sensor>=1.2.0',
         'PyYAML>=6.0'
     ],
-    packages=[
-        'ruuvigate'
-    ],
-    include_package_data=True,
 )

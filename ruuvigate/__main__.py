@@ -9,6 +9,7 @@ from ruuvitag_sensor.ruuvi import RuuviTagSensor
 
 from .azure_client import AzureClient
 
+
 class AzureParams(Enum):
     DeviceKey = "IOTHUB_DEVICE_DPS_DEVICE_KEY"
     DeviceID = "IOTHUB_DEVICE_DPS_DEVICE_ID"
@@ -108,10 +109,10 @@ def main(args, azure_config, ruuvi_macs):
                     else:
                         logging.warn(
                             "Received data from an unknown RuuviTag: " + mac)
+                azureClient.send_data()
             else:
                 logging.warn(
-                    "Could not ready any RuuviTag data. Please check that the specified RuuviTag(s) are in range.")
-            azureClient.send_data()
+                    "Could not read any RuuviTag data. Please make sure that the specified RuuviTags are within range.")
     except KeyboardInterrupt:
         logging.info("Exiting")
 

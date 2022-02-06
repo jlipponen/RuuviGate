@@ -7,7 +7,7 @@ from enum import Enum
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
 
-from .azure_client import AzureClient
+from azure_client import AzureClient
 
 
 class AzureParams(Enum):
@@ -28,8 +28,8 @@ class TelemNames(Enum):
     MAC = "MAC"
 
 
-def provision(args, azure_config):
-    logging.info("Provisioning new IoT Central device..")
+def provision_iotc_device(args, azure_config):
+    logging.info("Provisioning new Azure IoT Central device..")
     device_host = AzureClient.provision_device(azure_config[AzureParams.ProvisioningHost.value],
                                                azure_config[AzureParams.DeviceIDScope.value],
                                                azure_config[AzureParams.DeviceID.value],
@@ -50,29 +50,7 @@ def provision(args, azure_config):
     azure_config[AzureParams.DeviceHostName.value] = device_host
     return azure_config
 
-
-def parse_configurations(args):
-    with open(args.azure_confs, "r") as stream:
-        try:
-            azure_config = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-            sys.exit(os.EX_OSFILE)
-
-    # Check that all needed Azure configurations exist
-    for param in AzureParams:
-        if param.value == AzureParams.DeviceHostName.value and args.provision:
-            if param.value in azure_config:
-                logging.error(
-                    "Azure configuration error! Device host already specified. Sure you need to provision the device? "
-                    "If so, delete the existing entry.")
-                sys.exit(os.EX_USAGE)
-            continue
-        if param.value not in azure_config:
-            logging.error(
-                "Azure configuration error! Missing Azure configuration: " + param.value)
-            sys.exit(os.EX_USAGE)
-
+def parse_ruuvi_macs(args):
     with open(args.ruuvi_macs, "r") as stream:
         try:
             ruuvi_macs = yaml.safe_load(stream)
@@ -80,10 +58,28 @@ def parse_configurations(args):
             print(exc)
             sys.exit(os.EX_OSFILE)
 
-    return azure_config, ruuvi_macs
+    return ruuvi_macs
 
+def get_azure_client(args):
+    with open(args.azure_confs, "r") as stream:
+            try:
+                azure_config = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+                sys.exit(os.EX_OSFILE)
 
-def main(args, azure_config, ruuvi_macs):
+    # Check that all needed Azure configurations exist
+    for param in AzureParams:
+        if param.value != AzureParams.DeviceHostName.value and param.value not in azure_config:
+            logging.error(
+                "Azure configuration error! Missing Azure configuration: " + param.value)
+            sys.exit(os.EX_USAGE)
+
+    # Provision a new device if needed
+    if AzureParams.DeviceHostName.value not in azure_config:
+        azure_config = provision_iotc_device(args, azure_config)
+
+    # Connect to Azure IoT Central
     azureClient = AzureClient()
     try:
         azureClient.connect(azure_config[AzureParams.DeviceKey.value],
@@ -92,6 +88,9 @@ def main(args, azure_config, ruuvi_macs):
     except ConnectionError:
         sys.exit(os.EX_UNAVAILABLE)
 
+    return azureClient
+
+def main(args, client, ruuvi_macs):
     try:
         while True:
             datas = RuuviTagSensor.get_data_for_sensors(
@@ -99,7 +98,7 @@ def main(args, azure_config, ruuvi_macs):
             if datas:
                 for mac, data in datas.items():
                     if mac in ruuvi_macs:
-                        azureClient.buffer_data(
+                        client.buffer_data(
                             {TelemNames.Temperature.value+str(ruuvi_macs[mac]): data["temperature"],
                              TelemNames.Humidity.value+str(ruuvi_macs[mac]): data["humidity"],
                              TelemNames.Pressure.value+str(ruuvi_macs[mac]): data["pressure"],
@@ -107,11 +106,11 @@ def main(args, azure_config, ruuvi_macs):
                              TelemNames.Sequence.value+str(ruuvi_macs[mac]): data["measurement_sequence_number"]}
                         )
                     else:
-                        logging.warn(
+                        logging.warning(
                             "Received data from an unknown RuuviTag: " + mac)
-                azureClient.send_data()
+                client.send_data()
             else:
-                logging.warn(
+                logging.warning(
                     "Could not read any RuuviTag data. Please make sure that the specified RuuviTags are within range.")
     except KeyboardInterrupt:
         logging.info("Exiting")
@@ -119,6 +118,7 @@ def main(args, azure_config, ruuvi_macs):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--mode', dest='mode', choices=['azure'], default='azure')
     parser.add_argument('-r', '--ruuvimacs', dest='ruuvi_macs',
                         help='RuuviTag MAC address specification file path', required=True)
     parser.add_argument('-a', '--azureconfs', dest='azure_confs',
@@ -127,15 +127,13 @@ if __name__ == '__main__':
                         help='Interval (seconds) on which RuuviTag data is fetched and send to Azure', default=60, type=int)
     parser.add_argument('-l', '--loglevel', dest='log_level',
                         help='Python logger log level', default="WARN")
-    parser.add_argument('--provision', action='store_true',
-                        help='Provision current device to Azure IoT Central')
-    parser.set_defaults(provision=False)
+
     args = parser.parse_args()
+
     logging.basicConfig(level=args.log_level)
+    ruuvi_macs = parse_ruuvi_macs(args)
 
-    azure_config, ruuvi_macs = parse_configurations(args)
+    if args.mode == "azure":
+        client = get_azure_client(args)
 
-    if args.provision:
-        azure_config = provision(args, azure_config)
-
-    main(args, azure_config, ruuvi_macs)
+    main(args, client, ruuvi_macs)

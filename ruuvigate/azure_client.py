@@ -30,10 +30,11 @@ class AzureClient:
                 device_id=device_id,
             )
             self.client_.connect()
-        except Exception:
+        except Exception as ex:
             logging.error(
-                "Unable to connect to Azure. Please check the coenction parameters." +
-                " Is this device provisioned to Azure IoT Central?")
+                "Unable to connect to Azure! {}: {}".format(
+                    type(ex).__name__, ex.args)
+            )
             self.client_ = None
             raise ConnectionError()
 

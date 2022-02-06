@@ -4,6 +4,8 @@ import argparse
 import yaml
 import logging
 from enum import Enum
+from time import sleep
+from random import randint
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
 
@@ -50,6 +52,7 @@ def provision_iotc_device(args, azure_config):
     azure_config[AzureParams.DeviceHostName.value] = device_host
     return azure_config
 
+
 def parse_ruuvi_macs(args):
     with open(args.ruuvi_macs, "r") as stream:
         try:
@@ -60,13 +63,14 @@ def parse_ruuvi_macs(args):
 
     return ruuvi_macs
 
+
 def get_azure_client(args):
     with open(args.azure_confs, "r") as stream:
-            try:
-                azure_config = yaml.safe_load(stream)
-            except yaml.YAMLError as exc:
-                print(exc)
-                sys.exit(os.EX_OSFILE)
+        try:
+            azure_config = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+            sys.exit(os.EX_OSFILE)
 
     # Check that all needed Azure configurations exist
     for param in AzureParams:
@@ -90,25 +94,47 @@ def get_azure_client(args):
 
     return azureClient
 
+
+def get_ruuvi_data(args, client, macs):
+    if args.simulate:
+        data = {}
+        for mac in macs.keys():
+            ran = randint(-1, 1)
+            data[mac] = {
+                    "temperature": 15+3*ran,
+                    "humidity": 50+5*ran,
+                    "pressure": 950+20*ran,
+                    "battery": 3000+5*ran,
+                    "measurement_sequence_number": 1234+2*ran
+                }
+        sleep(args.interval)
+        return data
+    else:
+        return RuuviTagSensor.get_data_for_sensors(macs.keys(), args.interval)
+
+
 def main(args, client, ruuvi_macs):
     try:
         while True:
-            datas = RuuviTagSensor.get_data_for_sensors(
-                ruuvi_macs.keys(), args.interval)
+            datas = get_ruuvi_data(args, client, ruuvi_macs)
             if datas:
-                for mac, data in datas.items():
-                    if mac in ruuvi_macs:
-                        client.buffer_data(
-                            {TelemNames.Temperature.value+str(ruuvi_macs[mac]): data["temperature"],
-                             TelemNames.Humidity.value+str(ruuvi_macs[mac]): data["humidity"],
-                             TelemNames.Pressure.value+str(ruuvi_macs[mac]): data["pressure"],
-                             TelemNames.Battery.value+str(ruuvi_macs[mac]): data["battery"],
-                             TelemNames.Sequence.value+str(ruuvi_macs[mac]): data["measurement_sequence_number"]}
-                        )
-                    else:
-                        logging.warning(
-                            "Received data from an unknown RuuviTag: " + mac)
-                client.send_data()
+                if args.mode == 'stdout':
+                    print(datas)
+                else:
+                    for mac, data in datas.items():
+                        if mac in ruuvi_macs:
+                            # Match data to DTDL telemetry attribute names
+                            client.buffer_data(
+                                {TelemNames.Temperature.value+str(ruuvi_macs[mac]): data["temperature"],
+                                TelemNames.Humidity.value+str(ruuvi_macs[mac]): data["humidity"],
+                                TelemNames.Pressure.value+str(ruuvi_macs[mac]): data["pressure"],
+                                TelemNames.Battery.value+str(ruuvi_macs[mac]): data["battery"],
+                                TelemNames.Sequence.value+str(ruuvi_macs[mac]): data["measurement_sequence_number"]}
+                            )
+                        else:
+                            logging.warning(
+                                "Received data from an unknown RuuviTag: " + mac)
+                    client.send_data()
             else:
                 logging.warning(
                     "Could not read any RuuviTag data. Please make sure that the specified RuuviTags are within range.")
@@ -118,15 +144,19 @@ def main(args, client, ruuvi_macs):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--mode', dest='mode', choices=['azure'], default='azure')
+    parser.add_argument('-m', '--mode', dest='mode',
+                        choices=['azure', 'stdout'], default='azure',
+                        help='Data output destination')
     parser.add_argument('-r', '--ruuvimacs', dest='ruuvi_macs',
                         help='RuuviTag MAC address specification file path', required=True)
     parser.add_argument('-a', '--azureconfs', dest='azure_confs',
                         help='Azure configurations', required=True)
     parser.add_argument('-i', '--interval', dest='interval',
-                        help='Interval (seconds) on which RuuviTag data is fetched and send to Azure', default=60, type=int)
+                        help='Interval (seconds) on which RuuviTag data is fetched and send', default=60, type=int)
     parser.add_argument('-l', '--loglevel', dest='log_level',
                         help='Python logger log level', default="WARN")
+    parser.add_argument('--simulate', action='store_true',
+                        help='Use simulated RuuviTag measurements', default=False)
 
     args = parser.parse_args()
 
@@ -135,5 +165,7 @@ if __name__ == '__main__':
 
     if args.mode == "azure":
         client = get_azure_client(args)
+    else:
+        client = None
 
     main(args, client, ruuvi_macs)

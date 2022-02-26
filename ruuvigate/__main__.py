@@ -3,8 +3,9 @@ import os
 import argparse
 import yaml
 import logging
+import asyncio
+import re
 from enum import Enum
-from time import sleep
 from random import randint
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
@@ -30,13 +31,25 @@ class TelemNames(Enum):
     MAC = "MAC"
 
 
-def provision_iotc_device(args, azure_config):
+class MethodNames(Enum):
+    AddRuuvitag = "RuuviGate_250*AddRuuviTag"
+
+
+async def add_ruuvitag(data):
+    # https://stackoverflow.com/a/7629690
+    if not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", data.lower()):
+        return {"result": False, "data": "Not a valid MAC address"}
+    print("Adding RuuviTag "+data)
+    return {"result": True, "data": "RuuviTag " + data + " added"}
+
+
+async def provision_iotc_device(args, azure_config):
     logging.info("Provisioning new Azure IoT Central device..")
-    device_host = AzureClient.provision_device(azure_config[AzureParams.ProvisioningHost.value],
-                                               azure_config[AzureParams.DeviceIDScope.value],
-                                               azure_config[AzureParams.DeviceID.value],
-                                               azure_config[AzureParams.DeviceKey.value],
-                                               azure_config[AzureParams.ModelID.value])
+    device_host = await AzureClient.provision_device(azure_config[AzureParams.ProvisioningHost.value],
+                                                     azure_config[AzureParams.DeviceIDScope.value],
+                                                     azure_config[AzureParams.DeviceID.value],
+                                                     azure_config[AzureParams.DeviceKey.value],
+                                                     azure_config[AzureParams.ModelID.value])
     logging.info("Got device hostname: " + device_host +
                  "\nStoring it to the given Azure configuration file..")
 
@@ -64,7 +77,7 @@ def parse_ruuvi_macs(args):
     return ruuvi_macs
 
 
-def get_azure_client(args):
+async def get_azure_client(args):
     with open(args.azure_confs, "r") as stream:
         try:
             azure_config = yaml.safe_load(stream)
@@ -81,42 +94,48 @@ def get_azure_client(args):
 
     # Provision a new device if needed
     if AzureParams.DeviceHostName.value not in azure_config:
-        azure_config = provision_iotc_device(args, azure_config)
+        azure_config = await provision_iotc_device(args, azure_config)
 
     # Connect to Azure IoT Central
     azureClient = AzureClient()
     try:
-        azureClient.connect(azure_config[AzureParams.DeviceKey.value],
-                            azure_config[AzureParams.DeviceID.value],
-                            azure_config[AzureParams.DeviceHostName.value])
+        await azureClient.connect(azure_config[AzureParams.DeviceKey.value],
+                                  azure_config[AzureParams.DeviceID.value],
+                                  azure_config[AzureParams.DeviceHostName.value])
     except ConnectionError:
         sys.exit(os.EX_UNAVAILABLE)
 
     return azureClient
 
 
-def get_ruuvi_data(args, client, macs):
+async def get_ruuvi_data(args, client, macs):
     if args.simulate:
         data = {}
         for mac in macs.keys():
             ran = randint(-1, 1)
             data[mac] = {
-                    "temperature": 15+3*ran,
-                    "humidity": 50+5*ran,
-                    "pressure": 950+20*ran,
-                    "battery": 3000+5*ran,
-                    "measurement_sequence_number": 1234+2*ran
-                }
-        sleep(args.interval)
+                "temperature": 15+3*ran,
+                "humidity": 50+5*ran,
+                "pressure": 950+20*ran,
+                "battery": 3000+5*ran,
+                "measurement_sequence_number": 1234+2*ran
+            }
+        await asyncio.sleep(args.interval)
         return data
     else:
-        return RuuviTagSensor.get_data_for_sensors(macs.keys(), args.interval)
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None, RuuviTagSensor.get_data_for_sensors, macs.keys(), args.interval)
 
 
-def main(args, client, ruuvi_macs):
+async def main(args, client, ruuvi_macs):
     try:
+        asyncio.create_task(client.execute_method_listener(
+            MethodNames.AddRuuvitag.value, add_ruuvitag))
         while True:
-            datas = get_ruuvi_data(args, client, ruuvi_macs)
+            task = asyncio.create_task(
+                get_ruuvi_data(args, client, ruuvi_macs))
+            datas = await task
             if datas:
                 if args.mode == 'stdout':
                     print(datas)
@@ -124,22 +143,25 @@ def main(args, client, ruuvi_macs):
                     for mac, data in datas.items():
                         if mac in ruuvi_macs:
                             # Match data to DTDL telemetry attribute names
-                            client.buffer_data(
+                            await client.buffer_data(
                                 {TelemNames.Temperature.value+str(ruuvi_macs[mac]): data["temperature"],
-                                TelemNames.Humidity.value+str(ruuvi_macs[mac]): data["humidity"],
-                                TelemNames.Pressure.value+str(ruuvi_macs[mac]): data["pressure"],
-                                TelemNames.Battery.value+str(ruuvi_macs[mac]): data["battery"],
-                                TelemNames.Sequence.value+str(ruuvi_macs[mac]): data["measurement_sequence_number"]}
+                                 TelemNames.Humidity.value+str(ruuvi_macs[mac]): data["humidity"],
+                                 TelemNames.Pressure.value+str(ruuvi_macs[mac]): data["pressure"],
+                                 TelemNames.Battery.value+str(ruuvi_macs[mac]): data["battery"],
+                                 TelemNames.Sequence.value+str(ruuvi_macs[mac]): data["measurement_sequence_number"]}
                             )
                         else:
                             logging.warning(
                                 "Received data from an unknown RuuviTag: " + mac)
-                    client.send_data()
+                    await client.send_data()
             else:
                 logging.warning(
                     "Could not read any RuuviTag data. Please make sure that the specified RuuviTags are within range.")
     except KeyboardInterrupt:
         logging.info("Exiting")
+    finally:
+        if not args.simulate:
+            await client.shutdown()
 
 
 if __name__ == '__main__':
@@ -154,7 +176,8 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--interval', dest='interval',
                         help='Interval (seconds) on which RuuviTag data is fetched and send', default=60, type=int)
     parser.add_argument('-l', '--loglevel', dest='log_level',
-                        help='Python logger log level', default="WARN")
+                        help='Python logger log level',
+                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'], default="WARNING")
     parser.add_argument('--simulate', action='store_true',
                         help='Use simulated RuuviTag measurements', default=False)
 
@@ -164,8 +187,8 @@ if __name__ == '__main__':
     ruuvi_macs = parse_ruuvi_macs(args)
 
     if args.mode == "azure":
-        client = get_azure_client(args)
+        client = asyncio.run(get_azure_client(args))
     else:
         client = None
 
-    main(args, client, ruuvi_macs)
+    asyncio.run(main(args, client, ruuvi_macs))

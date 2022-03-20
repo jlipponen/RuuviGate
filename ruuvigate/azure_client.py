@@ -1,6 +1,7 @@
 import json
 import uuid
 import logging
+import asyncio
 from enum import Enum
 
 from azure.iot.device.aio import IoTHubDeviceClient
@@ -18,6 +19,12 @@ class AzureClient:
         self.client_ = None
         self.dataBuf_ = {}
 
+    def __connected(func):
+        def wrapper(self, *args, **kwargs):
+            assert self.client_ != None, "AzureClient not connected"
+            return func(self, *args, **kwargs)
+        return wrapper
+
     async def connect(self, device_key: str, device_id: str, iotcentral_hostname: str):
         try:
             self.client_ = IoTHubDeviceClient.create_from_symmetric_key(
@@ -28,34 +35,45 @@ class AzureClient:
             await self.client_.connect()
         except Exception as ex:
             logging.error(
-                "Unable to connect to Azure! {}: {}".format(
+                "Unable to connect to Azure: {} {}".format(
                     type(ex).__name__, ex.args)
             )
             self.client_ = None
             raise ConnectionError()
 
+    async def disconnect(self):
+        if self.client_ != None:
+            logging.info("Disconnecting AzureClient")
+            await self.client_.shutdown()
+            self.client_ = None
+
+    @__connected
     async def execute_method_listener(self, method_name, handler):
         logging.info("Executing a listener for \"" + method_name + "\" method")
         while True:
-            method_request = await self.client_.receive_method_request(method_name)
-            logging.info("Method request \"" + method_name +
-                         "\" received with payload:\n"+method_request.payload)
-
-            response_payload = await handler(method_request.payload)
-            if response_payload.get("result"):
-                response_status = 200
-            else:
-                response_status = 400
-
-            command_response = MethodResponse.create_from_method_request(
-                method_request, response_status, response_payload
-            )
-
             try:
-                await self.client_.send_method_response(command_response)
-            except RuntimeError:
-                print("Responding to command request \"{}\" failed".format(method_name))
+                method_request = await self.client_.receive_method_request(method_name)
+                logging.info("Method request \"" + method_name +
+                            "\" received with payload:\n"+method_request.payload)
 
+                response_payload = await handler(method_request.payload)
+                if response_payload.get("result"):
+                    response_status = 200
+                else:
+                    response_status = 400
+
+                command_response = MethodResponse.create_from_method_request(
+                    method_request, response_status, response_payload
+                )
+                try:
+                    await self.client_.send_method_response(command_response)
+                except RuntimeError:
+                    logging.error("Responding to command request \"{}\" failed".format(method_name))
+            except asyncio.CancelledError:
+                logging.info("Exiting \"" + method_name + "\" listener")
+                break
+
+    @__connected
     async def send_data(self, data={}):
         """
             param data: dictionary of values to send

@@ -48,7 +48,7 @@ class AzureClient:
             self.client_ = None
 
     @__connected
-    async def execute_method_listener(self, method_name, handler):
+    async def execute_method_listener(self, method_name, handler, cookie):
         logging.info("Executing a listener for \"" + method_name + "\" method")
         while True:
             try:
@@ -56,7 +56,7 @@ class AzureClient:
                 logging.info("Method request \"" + method_name +
                             "\" received with payload:\n"+method_request.payload)
 
-                response_payload = await handler(method_request.payload)
+                response_payload = await handler(method_request.payload, cookie)
                 if response_payload.get("result"):
                     response_status = 200
                 else:

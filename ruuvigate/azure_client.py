@@ -53,8 +53,7 @@ class AzureClient:
         while True:
             try:
                 method_request = await self.client_.receive_method_request(method_name)
-                logging.info("Method request \"" + method_name +
-                            "\" received with payload:\n"+method_request.payload)
+                logging.info("Received method request \"" + method_name + "\"")
 
                 response_payload = await handler(method_request.payload, cookie)
                 if response_payload.get("result"):

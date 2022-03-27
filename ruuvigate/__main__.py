@@ -37,6 +37,8 @@ class TelemNames(Enum):
 
 class MethodNames(Enum):
     AddRuuvitag = "RuuviGate_250*AddRuuviTag"
+    RemoveRuuvitag = "RuuviGate_250*RemoveRuuviTag"
+    GetRuuviTags = "RuuviGate_250*GetRuuviTags"
 
 
 class RuuviTags:
@@ -78,15 +80,45 @@ class RuuviTags:
         return self.macs_
 
 
-async def add_ruuvitag(data, ruuvitags):
+async def add_ruuvitag(mac, ruuvitags):
+    if mac is None:
+        return {"result": False, "data": "Cannot add empty MAC"}
+
     # https://stackoverflow.com/a/7629690
-    if not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", data.lower()):
-        logging.warning("Got illegal RuuviTag MAC "+data)
+    if not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", mac.lower()):
+        logging.warning("Got illegal RuuviTag MAC "+mac)
         return {"result": False, "data": "Not a valid MAC address"}
-    logging.info("Adding RuuviTag "+data)
+    logging.info("Adding RuuviTag "+mac)
     async with lock:
-        ruuvitags.add_mac(data)
-    return {"result": True, "data": "RuuviTag " + data + " added"}
+        ret = ruuvitags.add_mac(mac)
+    if ret:
+        return {"result": True, "data": "RuuviTag " + mac + " added"}
+    else:
+        return {"result": False, "data": "RuuviTag " + mac + " already exists"}
+
+
+async def remove_ruuvitag(mac, ruuvitags):
+    if mac is None:
+        return {"result": False, "data": "Cannot add empty MAC"}
+
+    # https://stackoverflow.com/a/7629690
+    if not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", mac.lower()):
+        logging.warning("Got illegal RuuviTag MAC "+mac)
+        return {"result": False, "data": "Not a valid MAC address"}
+    logging.info("Removing RuuviTag "+mac)
+    async with lock:
+        ret = ruuvitags.remove_mac(mac)
+    if ret:
+        return {"result": True, "data": "RuuviTag " + mac + " removed"}
+    else:
+        return {"result": False, "data": "RuuviTag " + mac + " doesn't exist"}
+
+
+async def get_ruuvitags(data, ruuvitags):
+    logging.info("Returning RuuviTags")
+    async with lock:
+        macs = ruuvitags.get_macs()
+    return {"result": True, "data": macs}
 
 
 async def provision_iotc_device(args, azure_config):
@@ -206,21 +238,28 @@ async def dummy_task():
 
 async def main(args, client, ruuvitags):
     if client:
-        t1 = asyncio.create_task(client.execute_method_listener(
-            MethodNames.AddRuuvitag.value, add_ruuvitag, ruuvitags))
+        listeners = [asyncio.create_task(client.execute_method_listener(
+            MethodNames.AddRuuvitag.value, add_ruuvitag, ruuvitags))]
+        listeners.append(asyncio.create_task(client.execute_method_listener(
+            MethodNames.RemoveRuuvitag.value, remove_ruuvitag, ruuvitags)))
+        listeners.append(asyncio.create_task(client.execute_method_listener(
+            MethodNames.GetRuuviTags.value, get_ruuvitags, ruuvitags)))
     else:
-        t1 = asyncio.create_task(dummy_task())
-    t2 = asyncio.create_task(publish_ruuvi_data(args, client, ruuvitags))
+        listeners = [asyncio.create_task(dummy_task())]
 
+    publisher = [asyncio.create_task(
+        publish_ruuvi_data(args, client, ruuvitags))]
+
+    tasks = listeners + publisher
     loop = asyncio.get_event_loop()
 
     # Signals to initiate a graceful shutdown
-    for signame in {'SIGINT', 'SIGTERM', 'SIGHUP'}:
+    for signame in {'SIGINT', 'SIGTERM'}:
         loop.add_signal_handler(
             getattr(signal, signame),
-            functools.partial(cancel_tasks, signame, t1, t2))
+            functools.partial(cancel_tasks, signame, *tasks))
 
-    await asyncio.gather(t1, t2)
+    await asyncio.gather(*tasks)
 
 if __name__ == '__main__':
     import sys

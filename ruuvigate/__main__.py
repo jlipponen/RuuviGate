@@ -5,6 +5,8 @@ import yaml
 import logging
 import asyncio
 import re
+import signal
+import functools
 from enum import Enum
 from random import randint
 
@@ -39,7 +41,7 @@ async def add_ruuvitag(data):
     # https://stackoverflow.com/a/7629690
     if not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", data.lower()):
         return {"result": False, "data": "Not a valid MAC address"}
-    print("Adding RuuviTag "+data)
+    logging.info("Adding RuuviTag "+data)
     return {"result": True, "data": "RuuviTag " + data + " added"}
 
 
@@ -108,7 +110,7 @@ async def get_azure_client(args):
     return azureClient
 
 
-async def get_ruuvi_data(args, client, macs):
+async def get_ruuvi_data(args, macs):
     if args.simulate:
         data = {}
         for mac in macs.keys():
@@ -128,43 +130,71 @@ async def get_ruuvi_data(args, client, macs):
             None, RuuviTagSensor.get_data_for_sensors, macs.keys(), args.interval)
 
 
-async def main(args, client, ruuvi_macs):
-    try:
-        asyncio.create_task(client.execute_method_listener(
-            MethodNames.AddRuuvitag.value, add_ruuvitag))
-        while True:
-            task = asyncio.create_task(
-                get_ruuvi_data(args, client, ruuvi_macs))
-            datas = await task
-            if datas:
+async def send_ruuvi_data(args, client, ruuvi_macs, data):
+    for mac, data in data.items():
+        if mac in ruuvi_macs:
+            # Match data to DTDL telemetry attribute names
+            await client.buffer_data(
+                {TelemNames.Temperature.value+str(ruuvi_macs[mac]): data["temperature"],
+                    TelemNames.Humidity.value+str(ruuvi_macs[mac]): data["humidity"],
+                    TelemNames.Pressure.value+str(ruuvi_macs[mac]): data["pressure"],
+                    TelemNames.Battery.value+str(ruuvi_macs[mac]): data["battery"],
+                    TelemNames.Sequence.value+str(ruuvi_macs[mac]): data["measurement_sequence_number"]}
+            )
+        else:
+            logging.warning(
+                "Received data from an unknown RuuviTag: " + mac)
+    await client.send_data()
+
+
+async def publish_ruuvi_data(args, client, ruuvi_macs):
+    while True:
+        try:
+            data = await get_ruuvi_data(args, ruuvi_macs)
+            if data:
                 if args.mode == 'stdout':
-                    print(datas)
+                    print(data)
                 else:
-                    for mac, data in datas.items():
-                        if mac in ruuvi_macs:
-                            # Match data to DTDL telemetry attribute names
-                            await client.buffer_data(
-                                {TelemNames.Temperature.value+str(ruuvi_macs[mac]): data["temperature"],
-                                 TelemNames.Humidity.value+str(ruuvi_macs[mac]): data["humidity"],
-                                 TelemNames.Pressure.value+str(ruuvi_macs[mac]): data["pressure"],
-                                 TelemNames.Battery.value+str(ruuvi_macs[mac]): data["battery"],
-                                 TelemNames.Sequence.value+str(ruuvi_macs[mac]): data["measurement_sequence_number"]}
-                            )
-                        else:
-                            logging.warning(
-                                "Received data from an unknown RuuviTag: " + mac)
-                    await client.send_data()
+                    await send_ruuvi_data(args, client, ruuvi_macs, data)
             else:
                 logging.warning(
                     "Could not read any RuuviTag data. Please make sure that the specified RuuviTags are within range.")
-    except KeyboardInterrupt:
-        logging.info("Exiting")
-    finally:
-        if not args.simulate:
-            await client.shutdown()
+        except asyncio.CancelledError:
+            break
 
+
+def cancel_tasks(signal, *tasks):
+    logging.info("Received signal {}. Cancelling tasks..".format(signal))
+    for task in tasks:
+        task.cancel()
+
+
+async def dummy_task():
+    await asyncio.sleep(1)
+
+
+async def main(args, client, ruuvi_macs):
+    if client:
+        t1 = asyncio.create_task(client.execute_method_listener(
+            MethodNames.AddRuuvitag.value, add_ruuvitag))
+    else:
+        t1 = asyncio.create_task(dummy_task())
+    t2 = asyncio.create_task(publish_ruuvi_data(args, client, ruuvi_macs))
+
+    loop = asyncio.get_event_loop()
+
+    # Signals to initiate a graceful shutdown
+    for signame in {'SIGINT', 'SIGTERM', 'SIGHUP'}:
+        loop.add_signal_handler(
+            getattr(signal, signame),
+            functools.partial(cancel_tasks, signame, t1, t2))
+
+    await asyncio.gather(t1, t2)
 
 if __name__ == '__main__':
+    import sys
+    assert sys.version_info >= (3, 7), "Python 3.7+ required"
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--mode', dest='mode',
                         choices=['azure', 'stdout'], default='azure',
@@ -192,3 +222,4 @@ if __name__ == '__main__':
         client = None
 
     asyncio.run(main(args, client, ruuvi_macs))
+    logging.info("RuuviGate was shutdown")

@@ -270,11 +270,11 @@ if __name__ == '__main__':
                         choices=['azure', 'stdout'], default='azure',
                         help='Data output destination')
     parser.add_argument('-r', '--ruuvitags', dest='ruuvitags',
-                        help='RuuviTags (MACs) specification file path', required=True)
+                        help='Path to RuuviTags (MACs) specification', required=True)
     parser.add_argument('-a', '--azureconfs', dest='azure_confs',
-                        help='Azure configurations', required=True)
+                        help='Path to Azure configuration', default=None)
     parser.add_argument('-i', '--interval', dest='interval',
-                        help='Interval (seconds) on which RuuviTag data is fetched and send', default=60, type=int)
+                        help='Interval (seconds) on which RuuviTag data is fetched and published', default=60, type=int)
     parser.add_argument('-l', '--loglevel', dest='log_level',
                         help='Python logger log level',
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'], default="WARNING")
@@ -288,6 +288,9 @@ if __name__ == '__main__':
     tags.parse_macs()
 
     if args.mode == "azure":
+        if args.azure_confs is None:
+            logging.error("Azure configuration needed in azure mode!")
+            sys.exit(os.EX_USAGE)
         client = asyncio.run(get_azure_client(args))
     else:
         client = None

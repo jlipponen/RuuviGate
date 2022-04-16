@@ -13,6 +13,7 @@ Example usage of the RuuviGate application
 ### Prerequisites
 * [Poetry](https://python-poetry.org/)
 * Python (>=3.7)
+* Azure IoT Central application with a device instance using the the DTDL templates in _azure-iot-central_ folder 
 
 #### Azure configuration file (YAML)
 ```

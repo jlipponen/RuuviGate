@@ -1,0 +1,92 @@
+{
+  "@id": "dtmi:ruuvimonitor:RuuviGate_250;1",
+  "@type": "Interface",
+  "contents": [
+    {
+      "@id": "dtmi:ruuvimonitor:RuuviGate_250:AddRuuviTag;1",
+      "@type": "Command",
+      "commandType": "synchronous",
+      "comment": "Adds a new RuuviTag sensor",
+      "displayName": {
+        "en": "Add RuuviTag"
+      },
+      "name": "AddRuuviTag",
+      "request": {
+        "@type": "CommandPayload",
+        "comment": "MAC address of RuuviTag to add",
+        "displayName": {
+          "en": "MAC"
+        },
+        "name": "MAC",
+        "schema": "string"
+      },
+      "response": {
+        "@type": "CommandPayload",
+        "description": {
+          "en": "True if RuuviTag was added successfully, false otherwise"
+        },
+        "displayName": {
+          "en": "result"
+        },
+        "name": "result",
+        "schema": "boolean"
+      }
+    },
+    {
+      "@id": "dtmi:ruuvimonitor:RuuviGate_250:RemoveRuuviTag;1",
+      "@type": "Command",
+      "commandType": "synchronous",
+      "displayName": {
+        "en": "Remove RuuviTag"
+      },
+      "name": "RemoveRuuviTag",
+      "request": {
+        "@type": "CommandPayload",
+        "comment": "MAC address of RuuviTag to remove",
+        "displayName": {
+          "en": "MAC"
+        },
+        "name": "MAC",
+        "schema": "string"
+      },
+      "response": {
+        "@type": "CommandPayload",
+        "description": {
+          "en": "True if RuuviTag was removed successfully, false otherwise"
+        },
+        "displayName": {
+          "en": "result"
+        },
+        "name": "result",
+        "schema": "boolean"
+      }
+    },
+    {
+      "@id": "dtmi:ruuvimonitor:RuuviGate_250:GetRuuviTags;1",
+      "@type": "Command",
+      "commandType": "synchronous",
+      "displayName": {
+        "en": "Get RuuviTags"
+      },
+      "name": "GetRuuviTags",
+      "response": {
+        "@type": "CommandPayload",
+        "description": {
+          "en": "List of RuuviTags currently used"
+        },
+        "displayName": {
+          "en": "MACs"
+        },
+        "name": "MACs",
+        "schema": "string"
+      }
+    }
+  ],
+  "displayName": {
+    "en": "Component"
+  },
+  "@context": [
+    "dtmi:iotcentral:context;2",
+    "dtmi:dtdl:context;2"
+  ]
+}

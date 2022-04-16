@@ -1,0 +1,501 @@
+[
+  {
+    "@id": "dtmi:ruuvimonitor:RuuviGate5g5;2",
+    "@type": "Interface",
+    "contents": [
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Temperature1;1",
+        "@type": [
+          "Telemetry",
+          "Temperature"
+        ],
+        "displayName": {
+          "en": "Ruuvi1 temperature"
+        },
+        "name": "Temperature1",
+        "schema": "double",
+        "unit": "degreeCelsius"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Humidity1;1",
+        "@type": [
+          "Telemetry",
+          "RelativeHumidity"
+        ],
+        "displayName": {
+          "en": "Ruuvi1 humidity"
+        },
+        "name": "Humidity1",
+        "schema": "double",
+        "unit": "percent"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Pressure1;1",
+        "@type": [
+          "Telemetry",
+          "Pressure"
+        ],
+        "displayName": {
+          "en": "Ruuvi1 pressure"
+        },
+        "name": "Pressure1",
+        "schema": "double",
+        "unit": "pascal"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Battery1;1",
+        "@type": [
+          "Telemetry",
+          "Voltage"
+        ],
+        "displayName": {
+          "en": "Ruuvi1 battery"
+        },
+        "name": "Battery1",
+        "schema": "double",
+        "unit": "volt"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Sequence1;1",
+        "@type": "Telemetry",
+        "description": {
+          "en": "Measurement sequence number"
+        },
+        "displayName": {
+          "en": "Ruuvi1 sequence"
+        },
+        "name": "Sequence1",
+        "schema": "integer"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:MAC1;1",
+        "@type": "Property",
+        "description": {
+          "en": "MAC address of the associated RuuviTag"
+        },
+        "displayName": {
+          "en": "Ruuvi1 MAC"
+        },
+        "name": "MAC1",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Temperature2;1",
+        "@type": [
+          "Telemetry",
+          "Temperature"
+        ],
+        "displayName": {
+          "en": "Ruuvi2 temperature"
+        },
+        "name": "Temperature2",
+        "schema": "double",
+        "unit": "degreeCelsius"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Humidity2;1",
+        "@type": [
+          "Telemetry",
+          "RelativeHumidity"
+        ],
+        "displayName": {
+          "en": "Ruuvi2 humidity"
+        },
+        "name": "Humidity2",
+        "schema": "double",
+        "unit": "percent"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Pressure2;1",
+        "@type": [
+          "Telemetry",
+          "Pressure"
+        ],
+        "displayName": {
+          "en": "Ruuvi2 pressure"
+        },
+        "name": "Pressure2",
+        "schema": "double",
+        "unit": "pascal"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Battery2;1",
+        "@type": [
+          "Telemetry",
+          "Voltage"
+        ],
+        "displayName": {
+          "en": "Ruuvi2 battery"
+        },
+        "name": "Battery2",
+        "schema": "double",
+        "unit": "volt"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Sequence2;1",
+        "@type": "Telemetry",
+        "description": {
+          "en": "Measurement sequence number"
+        },
+        "displayName": {
+          "en": "Ruuvi2 sequence"
+        },
+        "name": "Sequence2",
+        "schema": "integer"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:MAC2;1",
+        "@type": "Property",
+        "description": {
+          "en": "MAC address of the associated RuuviTag"
+        },
+        "displayName": {
+          "en": "Ruuvi2 MAC"
+        },
+        "name": "MAC2",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Temperature3;1",
+        "@type": [
+          "Telemetry",
+          "Temperature"
+        ],
+        "displayName": {
+          "en": "Ruuvi3 temperature"
+        },
+        "name": "Temperature3",
+        "schema": "double",
+        "unit": "degreeCelsius"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Humidity3;1",
+        "@type": [
+          "Telemetry",
+          "RelativeHumidity"
+        ],
+        "displayName": {
+          "en": "Ruuvi3 humidity"
+        },
+        "name": "Humidity3",
+        "schema": "double",
+        "unit": "percent"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Pressure3;1",
+        "@type": [
+          "Telemetry",
+          "Pressure"
+        ],
+        "displayName": {
+          "en": "Ruuvi3 pressure"
+        },
+        "name": "Pressure3",
+        "schema": "double",
+        "unit": "pascal"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Battery3;1",
+        "@type": [
+          "Telemetry",
+          "Voltage"
+        ],
+        "displayName": {
+          "en": "Ruuvi3 battery"
+        },
+        "name": "Battery3",
+        "schema": "double",
+        "unit": "volt"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Sequence3;1",
+        "@type": "Telemetry",
+        "description": {
+          "en": "Measurement sequence number"
+        },
+        "displayName": {
+          "en": "Ruuvi3 sequence"
+        },
+        "name": "Sequence3",
+        "schema": "integer"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:MAC3;1",
+        "@type": "Property",
+        "description": {
+          "en": "MAC address of the associated RuuviTag"
+        },
+        "displayName": {
+          "en": "Ruuvi3 MAC"
+        },
+        "name": "MAC3",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Temperature4;1",
+        "@type": [
+          "Telemetry",
+          "Temperature"
+        ],
+        "displayName": {
+          "en": "Ruuvi4 temperature"
+        },
+        "name": "Temperature4",
+        "schema": "double",
+        "unit": "degreeCelsius"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Humidity4;1",
+        "@type": [
+          "Telemetry",
+          "RelativeHumidity"
+        ],
+        "displayName": {
+          "en": "Ruuvi4 humidity"
+        },
+        "name": "Humidity4",
+        "schema": "double",
+        "unit": "percent"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Pressure4;1",
+        "@type": [
+          "Telemetry",
+          "Pressure"
+        ],
+        "displayName": {
+          "en": "Ruuvi4 pressure"
+        },
+        "name": "Pressure4",
+        "schema": "double",
+        "unit": "pascal"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Battery4;1",
+        "@type": [
+          "Telemetry",
+          "Voltage"
+        ],
+        "displayName": {
+          "en": "Ruuvi4 battery"
+        },
+        "name": "Battery4",
+        "schema": "double",
+        "unit": "volt"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Sequence4;1",
+        "@type": "Telemetry",
+        "description": {
+          "en": "Measurement sequence number"
+        },
+        "displayName": {
+          "en": "Ruuvi4 sequence"
+        },
+        "name": "Sequence4",
+        "schema": "integer"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:MAC4;1",
+        "@type": "Property",
+        "description": {
+          "en": "MAC address of the associated RuuviTag"
+        },
+        "displayName": {
+          "en": "Ruuvi4 MAC"
+        },
+        "name": "MAC4",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Temperature5;1",
+        "@type": [
+          "Telemetry",
+          "Temperature"
+        ],
+        "displayName": {
+          "en": "Ruuvi5 temperature"
+        },
+        "name": "Temperature5",
+        "schema": "double",
+        "unit": "degreeCelsius"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Humidity5;1",
+        "@type": [
+          "Telemetry",
+          "RelativeHumidity"
+        ],
+        "displayName": {
+          "en": "Ruuvi5 humidity"
+        },
+        "name": "Humidity5",
+        "schema": "double",
+        "unit": "percent"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Pressure5;1",
+        "@type": [
+          "Telemetry",
+          "Pressure"
+        ],
+        "displayName": {
+          "en": "Ruuvi5 pressure"
+        },
+        "name": "Pressure5",
+        "schema": "double",
+        "unit": "pascal"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Battery5;1",
+        "@type": [
+          "Telemetry",
+          "Voltage"
+        ],
+        "displayName": {
+          "en": "Ruuvi5 battery"
+        },
+        "name": "Battery5",
+        "schema": "double",
+        "unit": "volt"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:Sequence5;1",
+        "@type": "Telemetry",
+        "description": {
+          "en": "Measurement sequence number"
+        },
+        "displayName": {
+          "en": "Ruuvi5 sequence"
+        },
+        "name": "Sequence5",
+        "schema": "integer"
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:MAC5;1",
+        "@type": "Property",
+        "description": {
+          "en": "MAC address of the associated RuuviTag"
+        },
+        "displayName": {
+          "en": "Ruuvi5 MAC"
+        },
+        "name": "MAC5",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate5g5:RuuviGate_250;2",
+        "@type": "Component",
+        "displayName": {
+          "en": "RuuviGateCtrl"
+        },
+        "name": "RuuviGate_250",
+        "schema": "dtmi:ruuvimonitor:RuuviGate_250;1"
+      }
+    ],
+    "displayName": {
+      "en": "RuuviGate"
+    },
+    "@context": [
+      "dtmi:iotcentral:context;2",
+      "dtmi:dtdl:context;2"
+    ]
+  },
+  {
+    "@context": [
+      "dtmi:iotcentral:context;2",
+      "dtmi:dtdl:context;2"
+    ],
+    "@id": "dtmi:ruuvimonitor:RuuviGate_250;1",
+    "@type": "Interface",
+    "contents": [
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate_250:AddRuuviTag;1",
+        "@type": "Command",
+        "commandType": "synchronous",
+        "comment": "Adds a new RuuviTag sensor",
+        "displayName": {
+          "en": "Add RuuviTag"
+        },
+        "name": "AddRuuviTag",
+        "request": {
+          "@type": "CommandPayload",
+          "comment": "MAC address of RuuviTag to add",
+          "displayName": {
+            "en": "MAC"
+          },
+          "name": "MAC",
+          "schema": "string"
+        },
+        "response": {
+          "@type": "CommandPayload",
+          "description": {
+            "en": "True if RuuviTag was added successfully, false otherwise"
+          },
+          "displayName": {
+            "en": "result"
+          },
+          "name": "result",
+          "schema": "boolean"
+        }
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate_250:RemoveRuuviTag;1",
+        "@type": "Command",
+        "commandType": "synchronous",
+        "displayName": {
+          "en": "Remove RuuviTag"
+        },
+        "name": "RemoveRuuviTag",
+        "request": {
+          "@type": "CommandPayload",
+          "comment": "MAC address of RuuviTag to remove",
+          "displayName": {
+            "en": "MAC"
+          },
+          "name": "MAC",
+          "schema": "string"
+        },
+        "response": {
+          "@type": "CommandPayload",
+          "description": {
+            "en": "True if RuuviTag was removed successfully, false otherwise"
+          },
+          "displayName": {
+            "en": "result"
+          },
+          "name": "result",
+          "schema": "boolean"
+        }
+      },
+      {
+        "@id": "dtmi:ruuvimonitor:RuuviGate_250:GetRuuviTags;1",
+        "@type": "Command",
+        "commandType": "synchronous",
+        "displayName": {
+          "en": "Get RuuviTags"
+        },
+        "name": "GetRuuviTags",
+        "response": {
+          "@type": "CommandPayload",
+          "description": {
+            "en": "List of RuuviTags currently used"
+          },
+          "displayName": {
+            "en": "MACs"
+          },
+          "name": "MACs",
+          "schema": "string"
+        }
+      }
+    ],
+    "displayName": {
+      "en": "Component"
+    }
+  }
+]

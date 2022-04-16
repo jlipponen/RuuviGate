@@ -1,9 +1,20 @@
 # RuuviGate
 Python3 application to push RuuviTag data to cloud. Only Azure IoT Central is currently supported.
 
-Following cofiguration files are used by the application.
+## Acknowledgments
+* [RuuviTag Sensor](https://github.com/ttu/ruuvitag-sensor) by _ttu_ used to poll RuuviTag data
+* [Azure IoT SDKs for Python](https://github.com/Azure/azure-iot-sdk-python) used to publish the RuuviTag data
 
-## Azure configuration file (YAML), mandatory
+Elaborate list of used Python packages in _poetry.lock_
+
+## Usage examples
+Example usage of the RuuviGate application
+
+### Prerequisites
+* [Poetry](https://python-poetry.org/)
+* Python (>=3.7)
+
+#### Azure configuration file (YAML)
 ```
 IOTHUB_DEVICE_DPS_ID_SCOPE: [your-device-id-scope]
 IOTHUB_DEVICE_DPS_DEVICE_ID: [your-device-id]
@@ -15,7 +26,7 @@ IOTHUB_DEVICE_DPS_HOSTNAME: [your-provisioned-device-hostname] (optional, will b
 
 These values can be fetched from your Azure IoT Central application
 
-## RuuviTag MAC configuration file (YAML)
+#### RuuviTag MAC configuration file (YAML)
 ```
 RU:UV:IM:AC:ADD:R1 (optional)
 RU:UV:IM:AC:ADD:R2 (optional)
@@ -24,13 +35,6 @@ RU:UV:IM:AC:ADD:R4 (optional)
 RU:UV:IM:AC:ADD:R5 (optional)
 ```
 Notice that your device's (Azure IoT Central) datamodel should support the amount of Ruuvi's you specify. If none is specified, add them through the Azure IoT Central application.
-
-## Usage examples
-Example usage of the RuuviGate application
-
-### Prerequisites
-* [Poetry](https://python-poetry.org/)
-* Python (>=3.7)
 
 ### Virtualvenv installation and activation
 ```

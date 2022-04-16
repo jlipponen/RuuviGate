@@ -15,12 +15,40 @@ IOTHUB_DEVICE_DPS_HOSTNAME: [your-provisioned-device-hostname] (optional, will b
 
 These values can be fetched from your Azure IoT Central application
 
-## RuuviTag MAC configuration file (YAML), optional
+## RuuviTag MAC configuration file (YAML)
 ```
-RU:UV:IM:AC:ADD:R1
-RU:UV:IM:AC:ADD:R2
-RU:UV:IM:AC:ADD:R3
-RU:UV:IM:AC:ADD:R4
-RU:UV:IM:AC:ADD:R5
+RU:UV:IM:AC:ADD:R1 (optional)
+RU:UV:IM:AC:ADD:R2 (optional)
+RU:UV:IM:AC:ADD:R3 (optional)
+RU:UV:IM:AC:ADD:R4 (optional)
+RU:UV:IM:AC:ADD:R5 (optional)
 ```
 Notice that your device's (Azure IoT Central) datamodel should support the amount of Ruuvi's you specify. If none is specified, add them through the Azure IoT Central application.
+
+## Usage examples
+Example usage of the RuuviGate application
+
+### Prerequisites
+* [Poetry](https://python-poetry.org/)
+* Python (>=3.7)
+
+### Virtualvenv installation and activation
+```
+poetry install
+poetry shell
+```
+
+### Produce sample data to stdout
+```
+python ruuvigate -r /path/to/ruuvitags.yaml --mode stdout --interval 5 --loglevel INFO --simulate
+```
+
+### Produce sample data to Azure IoT Central
+```
+python ruuvigate -r /path/to/ruuvitags.yaml -a /path/to/azconf.yaml --interval 5 --loglevel INFO --simulate
+```
+
+### Publish RuuviTag data to Azure IoT Central
+```
+python ruuvigate -r /path/to/ruuvitags.yaml -a /path/to/azconf.yaml --interval 5 --loglevel INFO
+```

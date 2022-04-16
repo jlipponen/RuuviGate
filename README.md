@@ -57,3 +57,15 @@ python ruuvigate -r /path/to/ruuvitags.yaml -a /path/to/azconf.yaml --interval 5
 ```
 python ruuvigate -r /path/to/ruuvitags.yaml -a /path/to/azconf.yaml --interval 5 --loglevel INFO
 ```
+
+## Azure IoT Central
+Azure IoT Central by Microsoft has been the first cloud service to store and visualize RuuviGate published data:
+https://azure.microsoft.com/en-us/services/iot-central/#overview
+
+It stores 30 days worth of history with minimal costs. Rules can be created and for example an SMS alerts can triggered from an IoT Central application.
+
+![Alt text](azure-iot-central/dashboard.png?raw=true "Azure IoT Central Dashboard")
+
+It is also possible to specify device methods and run those from Azure IoT Central application.
+
+![Alt text](azure-iot-central/device-methods.png?raw=true "Azure IoT Central Dashboard")

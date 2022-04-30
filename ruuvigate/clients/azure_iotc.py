@@ -10,7 +10,11 @@ from azure.iot.device import MethodResponse
 from azure.iot.device import Message
 
 
-class AzureClient:
+class AzureIOTC:
+    '''
+    Class to provide device connectivity to an Azure IoT Central application with
+    Azure IoT SDK (https://github.com/Azure/azure-iot-sdk-python)
+    '''
     class Message(Enum):
         Encoding = "utf8"
         ContentType = "application/json"
@@ -21,7 +25,7 @@ class AzureClient:
 
     def __connected(func):
         def wrapper(self, *args, **kwargs):
-            assert self.client_ != None, "AzureClient not connected"
+            assert self.client_ != None, "AzureIOTC not connected"
             return func(self, *args, **kwargs)
         return wrapper
 
@@ -43,7 +47,7 @@ class AzureClient:
 
     async def disconnect(self):
         if self.client_ != None:
-            logging.info("Disconnecting AzureClient")
+            logging.info("Disconnecting AzureIOTC")
             await self.client_.shutdown()
             self.client_ = None
 
@@ -67,7 +71,8 @@ class AzureClient:
                 try:
                     await self.client_.send_method_response(command_response)
                 except RuntimeError:
-                    logging.error("Responding to command request \"{}\" failed".format(method_name))
+                    logging.error(
+                        "Responding to command request \"{}\" failed".format(method_name))
             except asyncio.CancelledError:
                 logging.info("Exiting \"" + method_name + "\" listener")
                 break
@@ -80,8 +85,8 @@ class AzureClient:
         self.dataBuf_.update(data)
 
         msg = Message(json.dumps(self.dataBuf_))
-        msg.content_encoding = AzureClient.Message.Encoding.value
-        msg.content_type = AzureClient.Message.ContentType.value
+        msg.content_encoding = AzureIOTC.Message.Encoding.value
+        msg.content_type = AzureIOTC.Message.ContentType.value
         msg.message_id = uuid.uuid4()
 
         await self.client_.send_message(msg)

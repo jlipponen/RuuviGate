@@ -11,8 +11,7 @@ from enum import Enum
 from random import randint
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
-
-from azure_client import AzureClient
+from ruuvigate.clients import AzureIOTC
 
 lock = asyncio.Lock()
 
@@ -123,7 +122,7 @@ async def get_ruuvitags(data, ruuvitags):
 
 async def provision_iotc_device(args, azure_config):
     logging.info("Provisioning new Azure IoT Central device..")
-    device_host = await AzureClient.provision_device(azure_config[AzureParams.ProvisioningHost.value],
+    device_host = await AzureIOTC.provision_device(azure_config[AzureParams.ProvisioningHost.value],
                                                      azure_config[AzureParams.DeviceIDScope.value],
                                                      azure_config[AzureParams.DeviceID.value],
                                                      azure_config[AzureParams.DeviceKey.value],
@@ -160,7 +159,7 @@ async def get_azure_client(args):
         azure_config = await provision_iotc_device(args, azure_config)
 
     # Connect to Azure IoT Central
-    azureClient = AzureClient()
+    azureClient = AzureIOTC()
     try:
         await azureClient.connect(azure_config[AzureParams.DeviceKey.value],
                                   azure_config[AzureParams.DeviceID.value],

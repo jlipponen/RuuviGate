@@ -262,7 +262,7 @@ async def main(args, client, ruuvitags):
 
 if __name__ == '__main__':
     import sys
-    assert sys.version_info >= (3, 7), "Python 3.7+ required"
+    assert sys.version_info >= (3, 8), "Python 3.8 or greater required"
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--mode', dest='mode',

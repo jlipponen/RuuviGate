@@ -7,7 +7,7 @@ with io.open('README.md', encoding='utf-8') as f:
 
 setup(
    name = 'ruuvigate',
-    version = '0.1.0',
+    version = '1.0.0',
     author = 'Jan Lipponen',
     author_email = 'jan.lipponen@gmail.com',
     description = 'Python package to push RuuviTag data periodically to specified cloud service',
@@ -19,7 +19,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     classifiers = [
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python :: 3.8',
         'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX :: Linux'

@@ -127,14 +127,9 @@ async def provision_iotc_device(args, azure_config):
                                                      azure_config[AzureParams.DeviceID.value],
                                                      azure_config[AzureParams.DeviceKey.value],
                                                      azure_config[AzureParams.ModelID.value])
-    logging.info("Got device hostname: " + device_host +
-                 "\nStoring it to the given Azure configuration file..")
 
-    with open(args.azure_confs, "a") as stream:
-        stream.write("\n"+AzureParams.DeviceHostName.value +
-                     ":"+" \""+device_host+"\"")
+    logging.info("Got device hostname: " + device_host)
 
-    # Add it to the parsed Azure configuration as well
     azure_config[AzureParams.DeviceHostName.value] = device_host
     return azure_config
 

@@ -22,7 +22,6 @@ IOTHUB_DEVICE_DPS_DEVICE_ID: [your-device-id]
 IOTHUB_DEVICE_DPS_DEVICE_KEY: [your-device-id-key]
 IOTHUB_DEVICE_DPS_ENDPOINT: "global.azure-devices-provisioning.net"
 IOTHUB_DEVICE_DPS_MODEL_ID: [your-device's-data-model-id]
-IOTHUB_DEVICE_DPS_HOSTNAME: [your-provisioned-device-hostname] (optional, will be created during provisioning)
 ```
 
 These values can be fetched from your Azure IoT Central application

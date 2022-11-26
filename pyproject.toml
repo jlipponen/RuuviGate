@@ -1,8 +1,15 @@
 [tool.poetry]
 name = "ruuvigate"
 version = "1.0.0"
-description = ""
+description = "Python package to push RuuviTag data to a cloud service"
+license = "MIT"
 authors = ["Jan Lipponen <jan.lipponen@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/jlipponen/RuuviGate"
+keywords = ["RuuviTag"]
+packages = [
+    { include = "ruuvigate" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"

@@ -5,8 +5,6 @@ Python package to push RuuviTag data to a cloud service.
 * [RuuviTag Sensor](https://github.com/ttu/ruuvitag-sensor) by _ttu_ used to poll RuuviTag data
 * [Azure IoT SDKs for Python](https://github.com/Azure/azure-iot-sdk-python) used to publish the RuuviTag data
 
-Elaborate list of used Python packages in [poetry.lock](./poetry.lock)
-
 ## Prerequisites
 * [Poetry](https://python-poetry.org/)
 * Python (>=3.8)

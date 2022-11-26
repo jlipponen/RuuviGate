@@ -13,12 +13,12 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-ruuvitag-sensor = "^1.2.0"
-azure-iot-device = "^2.9.0"
-PyYAML = "^6.0"
+ruuvitag-sensor = "^2.0.0"
+azure-iot-device = "^2.12.0"
+pyyaml = "^6.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^7.2.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

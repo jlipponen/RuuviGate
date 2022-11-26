@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ruuvigate"
-version = "1.0.0"
+version = "1.0.1"
 description = "Python package to push RuuviTag data to a cloud service"
 license = "MIT"
 authors = ["Jan Lipponen <jan.lipponen@gmail.com>"]

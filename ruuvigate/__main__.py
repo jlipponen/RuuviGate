@@ -6,28 +6,12 @@ import asyncio
 import re
 import signal
 import functools
-from enum import Enum
 from random import randint
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
 from ruuvigate.clients import AzureIOTC
 
 lock = asyncio.Lock()
-
-class TelemNames(Enum):
-    Temperature = "Temperature"
-    Humidity = "Humidity"
-    Pressure = "Pressure"
-    Battery = "Battery"
-    Sequence = "Sequence"
-    MAC = "MAC"
-
-
-class MethodNames(Enum):
-    AddRuuvitag = "RuuviGate_250*AddRuuviTag"
-    RemoveRuuvitag = "RuuviGate_250*RemoveRuuviTag"
-    GetRuuviTags = "RuuviGate_250*GetRuuviTags"
-
 
 class RuuviTags:
     def __init__(self, path):
@@ -129,9 +113,9 @@ async def get_ruuvi_data(args, ruuvitags):
         for tag in ruuvitags:
             ran = randint(-1, 1)
             data[tag] = {
-                "temperature": 15+3*ran,
-                "humidity": 50+5*ran,
-                "pressure": 950+20*ran,
+                "temperature": 15+3.2*ran,
+                "humidity": 50+5.7*ran,
+                "pressure": 950+20.5*ran,
                 "battery": 3000+5*ran,
                 "measurement_sequence_number": 1234+2*ran
             }
@@ -145,13 +129,12 @@ async def get_ruuvi_data(args, ruuvitags):
 
 async def send_ruuvi_data(client, ruuvitags, data):
     for mac, data in data.items():
-        # Match data to DTDL telemetry attribute names
         await client.buffer_data(
-            {TelemNames.Temperature.value+str(ruuvitags.index(mac)+1): data["temperature"],
-                TelemNames.Humidity.value+str(ruuvitags.index(mac)+1): data["humidity"],
-                TelemNames.Pressure.value+str(ruuvitags.index(mac)+1): data["pressure"],
-                TelemNames.Battery.value+str(ruuvitags.index(mac)+1): data["battery"],
-                TelemNames.Sequence.value+str(ruuvitags.index(mac)+1): data["measurement_sequence_number"]}
+            {"Temperature"+str(ruuvitags.index(mac)+1): data["temperature"],
+                "Humidity"+str(ruuvitags.index(mac)+1): data["humidity"],
+                "Pressure"+str(ruuvitags.index(mac)+1): data["pressure"],
+                "Battery"+str(ruuvitags.index(mac)+1): data["battery"],
+                "Sequence"+str(ruuvitags.index(mac)+1): data["measurement_sequence_number"]}
         )
     await client.send_data()
 
@@ -225,11 +208,11 @@ async def main():
 
     if client is not None:
         listeners = [asyncio.create_task(client.execute_method_listener(
-            MethodNames.AddRuuvitag.value, add_ruuvitag, tags))]
+            "AddRuuviTag", add_ruuvitag, tags))]
         listeners.append(asyncio.create_task(client.execute_method_listener(
-            MethodNames.RemoveRuuvitag.value, remove_ruuvitag, tags)))
+            "RemoveRuuviTag", remove_ruuvitag, tags)))
         listeners.append(asyncio.create_task(client.execute_method_listener(
-            MethodNames.GetRuuviTags.value, get_ruuvitags, tags)))
+            "GetRuuviTags", get_ruuvitags, tags)))
     else:
         listeners = [asyncio.create_task(dummy_task())]
 

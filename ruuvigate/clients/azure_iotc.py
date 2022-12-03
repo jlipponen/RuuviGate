@@ -1,7 +1,9 @@
+import os
 import json
 import uuid
 import logging
 import asyncio
+import yaml
 from enum import Enum
 
 from azure.iot.device.aio import IoTHubDeviceClient
@@ -15,6 +17,13 @@ class AzureIOTC:
     Class to provide device connectivity to an Azure IoT Central application with
     Azure IoT SDK (https://github.com/Azure/azure-iot-sdk-python)
     '''
+    class AzureParams(Enum):
+        DeviceKey = "IOTHUB_DEVICE_DPS_DEVICE_KEY"
+        DeviceID = "IOTHUB_DEVICE_DPS_DEVICE_ID"
+        DeviceIDScope = "IOTHUB_DEVICE_DPS_ID_SCOPE"
+        ProvisioningHost = "IOTHUB_DEVICE_DPS_ENDPOINT"
+        ModelID = "IOTHUB_DEVICE_DPS_MODEL_ID"
+
     class Message(Enum):
         Encoding = "utf8"
         ContentType = "application/json"
@@ -29,12 +38,24 @@ class AzureIOTC:
             return func(self, *args, **kwargs)
         return wrapper
 
-    async def connect(self, device_key: str, device_id: str, iotcentral_hostname: str):
+    async def connect(self, config_path: str):
+        config = self.parse_config(config_path)
+
+        # Provision the device
+        device_host = await self.__provision_device(config[self.AzureParams.ProvisioningHost.value],
+                                                        config[self.AzureParams.DeviceIDScope.value],
+                                                        config[self.AzureParams.DeviceID.value],
+                                                        config[self.AzureParams.DeviceKey.value],
+                                                        config[self.AzureParams.ModelID.value])
+
+        logging.info("Got device hostname: " + device_host)
+
+        # Open the connection
         try:
             self.client_ = IoTHubDeviceClient.create_from_symmetric_key(
-                symmetric_key=device_key,
-                hostname=iotcentral_hostname,
-                device_id=device_id,
+                symmetric_key=config[self.AzureParams.DeviceKey.value],
+                hostname=device_host,
+                device_id=config[self.AzureParams.DeviceID.value],
             )
             await self.client_.connect()
         except Exception as ex:
@@ -99,7 +120,29 @@ class AzureIOTC:
         self.dataBuf_.update(data)
 
     @staticmethod
-    async def provision_device(provisioning_host, id_scope, registration_id, symmetric_key, model_id):
+    def parse_config(config_path: str):
+        if not os.path.exists(config_path):
+            logging.error("Can't find file: " + config_path)
+            raise FileNotFoundError(config_path)
+
+        with open(config_path, "r") as stream:
+            try:
+                config = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                logging.error(exc)
+                raise exc
+
+        # Check that all needed configurations exist
+        for param in AzureIOTC.AzureParams:
+            if param.value not in config:
+                logging.error(
+                    "Configuration error! Missing configuration: " + param.value)
+                raise ValueError("Missing configuration")
+
+        return config
+
+    @staticmethod
+    async def __provision_device(provisioning_host, id_scope, registration_id, symmetric_key, model_id):
         provisioning_device_client = ProvisioningDeviceClient.create_from_symmetric_key(
             provisioning_host=provisioning_host,
             registration_id=registration_id,

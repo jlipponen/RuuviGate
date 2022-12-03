@@ -1,7 +1,6 @@
 import sys
 import os
 import argparse
-import yaml
 import logging
 import asyncio
 import re
@@ -14,16 +13,6 @@ from ruuvitag_sensor.ruuvi import RuuviTagSensor
 from ruuvigate.clients import AzureIOTC
 
 lock = asyncio.Lock()
-
-
-class AzureParams(Enum):
-    DeviceKey = "IOTHUB_DEVICE_DPS_DEVICE_KEY"
-    DeviceID = "IOTHUB_DEVICE_DPS_DEVICE_ID"
-    DeviceIDScope = "IOTHUB_DEVICE_DPS_ID_SCOPE"
-    DeviceHostName = "IOTHUB_DEVICE_DPS_HOSTNAME"
-    ProvisioningHost = "IOTHUB_DEVICE_DPS_ENDPOINT"
-    ModelID = "IOTHUB_DEVICE_DPS_MODEL_ID"
-
 
 class TelemNames(Enum):
     Temperature = "Temperature"
@@ -120,49 +109,18 @@ async def get_ruuvitags(data, ruuvitags):
     return {"result": True, "data": macs}
 
 
-async def provision_iotc_device(args, azure_config):
-    logging.info("Provisioning new Azure IoT Central device..")
-    device_host = await AzureIOTC.provision_device(azure_config[AzureParams.ProvisioningHost.value],
-                                                     azure_config[AzureParams.DeviceIDScope.value],
-                                                     azure_config[AzureParams.DeviceID.value],
-                                                     azure_config[AzureParams.DeviceKey.value],
-                                                     azure_config[AzureParams.ModelID.value])
+async def get_client(args):
+    client = None
 
-    logging.info("Got device hostname: " + device_host)
+    if args.mode == "azure":
+        client = AzureIOTC()
 
-    azure_config[AzureParams.DeviceHostName.value] = device_host
-    return azure_config
-
-
-async def get_azure_client(args):
-    with open(args.azure_config, "r") as stream:
-        try:
-            azure_config = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            logging.error(exc)
-            sys.exit(os.EX_OSFILE)
-
-    # Check that all needed Azure configurations exist
-    for param in AzureParams:
-        if param.value != AzureParams.DeviceHostName.value and param.value not in azure_config:
-            logging.error(
-                "Azure configuration error! Missing Azure configuration: " + param.value)
-            sys.exit(os.EX_USAGE)
-
-    # Provision a new device if needed
-    if AzureParams.DeviceHostName.value not in azure_config:
-        azure_config = await provision_iotc_device(args, azure_config)
-
-    # Connect to Azure IoT Central
-    azureClient = AzureIOTC()
     try:
-        await azureClient.connect(azure_config[AzureParams.DeviceKey.value],
-                                  azure_config[AzureParams.DeviceID.value],
-                                  azure_config[AzureParams.DeviceHostName.value])
+        await client.connect(args.config)
     except ConnectionError:
         sys.exit(os.EX_UNAVAILABLE)
 
-    return azureClient
+    return client
 
 
 async def get_ruuvi_data(args, ruuvitags):
@@ -206,7 +164,7 @@ async def publish_ruuvi_data(args, client, ruuvitags):
             if macs:
                 data = await get_ruuvi_data(args, macs)
                 if data:
-                    if args.mode == 'stdout':
+                    if args.mode == 'stdout' or client is None:
                         print(data)
                     else:
                         await send_ruuvi_data(client, macs, data)
@@ -237,8 +195,8 @@ def parse_args():
                         help='RuuviTag measurements output destination')
     parser.add_argument('-r', '--ruuvitags', dest='ruuvitags',
                         help='Path to RuuviTag specification file', required=True)
-    parser.add_argument('-a', '--azureconf', dest='azure_config',
-                        help='Path to Azure configuration file', default=None)
+    parser.add_argument('-c', '--config', dest='config',
+                        help='Path to cloud client configuration file', default=None)
     parser.add_argument('-i', '--interval', dest='interval',
                         help='Interval (seconds) in which RuuviTag data is polled and published', default=60, type=int)
     parser.add_argument('-l', '--loglevel', dest='log_level',
@@ -249,8 +207,8 @@ def parse_args():
 
     args = parser.parse_args()
 
-    if args.mode == "azure" and args.azure_config is None:
-        logging.error("Azure configuration needed in azure mode!")
+    if args.mode != "stdout" and args.config is None:
+        logging.error("Configuration file path needed when not using stdout mode!")
         parser.print_help(sys.stderr)
         sys.exit(os.EX_USAGE)
     return args
@@ -263,10 +221,7 @@ async def main():
 
     tags = RuuviTags(args.ruuvitags)
     tags.parse_macs()
-    client = None
-
-    if args.mode == "azure":
-        client = await get_azure_client(args)
+    client = await get_client(args)
 
     if client is not None:
         listeners = [asyncio.create_task(client.execute_method_listener(

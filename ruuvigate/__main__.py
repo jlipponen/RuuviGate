@@ -135,7 +135,7 @@ async def provision_iotc_device(args, azure_config):
 
 
 async def get_azure_client(args):
-    with open(args.azure_confs, "r") as stream:
+    with open(args.azure_config, "r") as stream:
         try:
             azure_config = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -230,19 +230,56 @@ async def dummy_task():
     await asyncio.sleep(1)
 
 
-async def main(args, client, ruuvitags):
-    if client:
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--mode', dest='mode',
+                        choices=['azure', 'stdout'], default='azure',
+                        help='RuuviTag measurements output destination')
+    parser.add_argument('-r', '--ruuvitags', dest='ruuvitags',
+                        help='Path to RuuviTag specification file', required=True)
+    parser.add_argument('-a', '--azureconf', dest='azure_config',
+                        help='Path to Azure configuration file', default=None)
+    parser.add_argument('-i', '--interval', dest='interval',
+                        help='Interval (seconds) in which RuuviTag data is polled and published', default=60, type=int)
+    parser.add_argument('-l', '--loglevel', dest='log_level',
+                        help='Python logger log level',
+                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'], default="WARNING")
+    parser.add_argument('--simulate', action='store_true',
+                        help='Use simulated RuuviTag measurements', default=False)
+
+    args = parser.parse_args()
+
+    if args.mode == "azure" and args.azure_config is None:
+        logging.error("Azure configuration needed in azure mode!")
+        parser.print_help(sys.stderr)
+        sys.exit(os.EX_USAGE)
+    return args
+
+
+async def main():
+    assert sys.version_info >= (3, 8), "Python 3.8 or greater required"
+    args = parse_args()
+    logging.basicConfig(level=args.log_level)
+
+    tags = RuuviTags(args.ruuvitags)
+    tags.parse_macs()
+    client = None
+
+    if args.mode == "azure":
+        client = await get_azure_client(args)
+
+    if client is not None:
         listeners = [asyncio.create_task(client.execute_method_listener(
-            MethodNames.AddRuuvitag.value, add_ruuvitag, ruuvitags))]
+            MethodNames.AddRuuvitag.value, add_ruuvitag, tags))]
         listeners.append(asyncio.create_task(client.execute_method_listener(
-            MethodNames.RemoveRuuvitag.value, remove_ruuvitag, ruuvitags)))
+            MethodNames.RemoveRuuvitag.value, remove_ruuvitag, tags)))
         listeners.append(asyncio.create_task(client.execute_method_listener(
-            MethodNames.GetRuuviTags.value, get_ruuvitags, ruuvitags)))
+            MethodNames.GetRuuviTags.value, get_ruuvitags, tags)))
     else:
         listeners = [asyncio.create_task(dummy_task())]
 
     publisher = [asyncio.create_task(
-        publish_ruuvi_data(args, client, ruuvitags))]
+        publish_ruuvi_data(args, client, tags))]
 
     tasks = listeners + publisher
     loop = asyncio.get_event_loop()
@@ -256,38 +293,5 @@ async def main(args, client, ruuvitags):
     await asyncio.gather(*tasks)
 
 if __name__ == '__main__':
-    import sys
-    assert sys.version_info >= (3, 8), "Python 3.8 or greater required"
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--mode', dest='mode',
-                        choices=['azure', 'stdout'], default='azure',
-                        help='Data output destination')
-    parser.add_argument('-r', '--ruuvitags', dest='ruuvitags',
-                        help='Path to RuuviTags (MACs) specification', required=True)
-    parser.add_argument('-a', '--azureconfs', dest='azure_confs',
-                        help='Path to Azure configuration', default=None)
-    parser.add_argument('-i', '--interval', dest='interval',
-                        help='Interval (seconds) on which RuuviTag data is fetched and published', default=60, type=int)
-    parser.add_argument('-l', '--loglevel', dest='log_level',
-                        help='Python logger log level',
-                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'], default="WARNING")
-    parser.add_argument('--simulate', action='store_true',
-                        help='Use simulated RuuviTag measurements', default=False)
-
-    args = parser.parse_args()
-
-    logging.basicConfig(level=args.log_level)
-    tags = RuuviTags(args.ruuvitags)
-    tags.parse_macs()
-
-    if args.mode == "azure":
-        if args.azure_confs is None:
-            logging.error("Azure configuration needed in azure mode!")
-            sys.exit(os.EX_USAGE)
-        client = asyncio.run(get_azure_client(args))
-    else:
-        client = None
-
-    asyncio.run(main(args, client, tags))
+    asyncio.run(main())
     logging.info("RuuviGate was shutdown")

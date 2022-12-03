@@ -17,6 +17,12 @@ class AzureIOTC:
     Class to provide device connectivity to an Azure IoT Central application with
     Azure IoT SDK (https://github.com/Azure/azure-iot-sdk-python)
     '''
+    MethodNames = {
+        "AddRuuviTag": "RuuviGate_250*AddRuuviTag",
+        "RemoveRuuviTag": "RuuviGate_250*RemoveRuuviTag",
+        "GetRuuviTags" : "RuuviGate_250*GetRuuviTags"
+    }
+
     class AzureParams(Enum):
         DeviceKey = "IOTHUB_DEVICE_DPS_DEVICE_KEY"
         DeviceID = "IOTHUB_DEVICE_DPS_DEVICE_ID"
@@ -77,14 +83,11 @@ class AzureIOTC:
         logging.info("Executing a listener for \"" + method_name + "\" method")
         while True:
             try:
-                method_request = await self.client_.receive_method_request(method_name)
+                method_request = await self.client_.receive_method_request(self.MethodNames.get(method_name))
                 logging.info("Received method request \"" + method_name + "\"")
 
                 response_payload = await handler(method_request.payload, cookie)
-                if response_payload.get("result"):
-                    response_status = 200
-                else:
-                    response_status = 400
+                response_status = 200 if response_payload.get("result") else 400
 
                 command_response = MethodResponse.create_from_method_request(
                     method_request, response_status, response_payload
@@ -116,7 +119,7 @@ class AzureIOTC:
 
         self.dataBuf_.clear()
 
-    async def buffer_data(self, data):
+    async def buffer_data(self, data={}):
         self.dataBuf_.update(data)
 
     @staticmethod

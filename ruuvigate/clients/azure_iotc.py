@@ -20,7 +20,7 @@ class AzureIOTC:
     MethodNames = {
         "AddRuuviTag": "RuuviGate_250*AddRuuviTag",
         "RemoveRuuviTag": "RuuviGate_250*RemoveRuuviTag",
-        "GetRuuviTags" : "RuuviGate_250*GetRuuviTags"
+        "GetRuuviTags": "RuuviGate_250*GetRuuviTags"
     }
 
     class AzureParams(Enum):
@@ -39,20 +39,23 @@ class AzureIOTC:
         self.dataBuf_ = {}
 
     def __connected(func):
+
         def wrapper(self, *args, **kwargs):
             assert self.client_ != None, "AzureIOTC not connected"
             return func(self, *args, **kwargs)
+
         return wrapper
 
     async def connect(self, config_path: str):
         config = self.parse_config(config_path)
 
         # Provision the device
-        device_host = await self.__provision_device(config[self.AzureParams.ProvisioningHost.value],
-                                                        config[self.AzureParams.DeviceIDScope.value],
-                                                        config[self.AzureParams.DeviceID.value],
-                                                        config[self.AzureParams.DeviceKey.value],
-                                                        config[self.AzureParams.ModelID.value])
+        device_host = await self.__provision_device(
+            config[self.AzureParams.ProvisioningHost.value],
+            config[self.AzureParams.DeviceIDScope.value],
+            config[self.AzureParams.DeviceID.value],
+            config[self.AzureParams.DeviceKey.value],
+            config[self.AzureParams.ModelID.value])
 
         logging.info("Got device hostname: " + device_host)
 
@@ -65,10 +68,8 @@ class AzureIOTC:
             )
             await self.client_.connect()
         except Exception as ex:
-            logging.error(
-                "Unable to connect to Azure: {} {}".format(
-                    type(ex).__name__, ex.args)
-            )
+            logging.error("Unable to connect to Azure: {} {}".format(
+                type(ex).__name__, ex.args))
             self.client_ = None
             raise ConnectionError()
 
@@ -83,20 +84,23 @@ class AzureIOTC:
         logging.info("Executing a listener for \"" + method_name + "\" method")
         while True:
             try:
-                method_request = await self.client_.receive_method_request(self.MethodNames.get(method_name))
+                method_request = await self.client_.receive_method_request(
+                    self.MethodNames.get(method_name))
                 logging.info("Received method request \"" + method_name + "\"")
 
-                response_payload = await handler(method_request.payload, cookie)
-                response_status = 200 if response_payload.get("result") else 400
+                response_payload = await handler(method_request.payload,
+                                                 cookie)
+                response_status = 200 if response_payload.get(
+                    "result") else 400
 
                 command_response = MethodResponse.create_from_method_request(
-                    method_request, response_status, response_payload
-                )
+                    method_request, response_status, response_payload)
                 try:
                     await self.client_.send_method_response(command_response)
                 except RuntimeError:
                     logging.error(
-                        "Responding to command request \"{}\" failed".format(method_name))
+                        "Responding to command request \"{}\" failed".format(
+                            method_name))
             except asyncio.CancelledError:
                 logging.info("Exiting \"" + method_name + "\" listener")
                 break
@@ -114,8 +118,8 @@ class AzureIOTC:
         msg.message_id = uuid.uuid4()
 
         await self.client_.send_message(msg)
-        logging.info("Sent message " + str(msg) +
-                     " with id " + str(msg.message_id))
+        logging.info("Sent message " + str(msg) + " with id " +
+                     str(msg.message_id))
 
         self.dataBuf_.clear()
 
@@ -138,14 +142,15 @@ class AzureIOTC:
         # Check that all needed configurations exist
         for param in AzureIOTC.AzureParams:
             if param.value not in config:
-                logging.error(
-                    "Configuration error! Missing configuration: " + param.value)
+                logging.error("Configuration error! Missing configuration: " +
+                              param.value)
                 raise ValueError("Missing configuration")
 
         return config
 
     @staticmethod
-    async def __provision_device(provisioning_host, id_scope, registration_id, symmetric_key, model_id):
+    async def __provision_device(provisioning_host, id_scope, registration_id,
+                                 symmetric_key, model_id):
         provisioning_device_client = ProvisioningDeviceClient.create_from_symmetric_key(
             provisioning_host=provisioning_host,
             registration_id=registration_id,
@@ -161,8 +166,6 @@ class AzureIOTC:
             logging.info(registration_result.registration_state.assigned_hub)
             logging.info(registration_result.registration_state.device_id)
         else:
-            raise RuntimeError(
-                "Could not provision device."
-            )
+            raise RuntimeError("Could not provision device.")
 
         return registration_result.registration_state.assigned_hub

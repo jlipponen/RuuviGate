@@ -53,7 +53,12 @@ Examples of configuration files:
 > poetry run pytest
 ```
 
-### Run formatting
+### Formatting
+Check formatting
 ```
-> poetry run yapf
+> poetry run yapf --diff --recursive .
+```
+Apply formatting
+```
+> poetry run yapf -i --recursive .
 ```

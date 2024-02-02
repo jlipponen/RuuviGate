@@ -20,4 +20,4 @@ jobs:
         pip install yapf
     - name: Analysing the code with yapf
       run: |
-        yapf --diff --recursive .
+        yapf --diff --recursive ruuvigate

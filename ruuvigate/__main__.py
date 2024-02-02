@@ -11,6 +11,7 @@ from random import randint
 from ruuvitag_sensor.ruuvi import RuuviTagSensor
 from ruuvigate.clients import AzureIOTC
 
+
 class RuuviTags:
     lock = asyncio.Lock()
 
@@ -52,19 +53,21 @@ class RuuviTags:
             if not line:
                 continue
             if not self.is_legal_mac(line):
-                raise ValueError("Malformed line in RuuviTags file: {}".format(line))
+                raise ValueError(
+                    "Malformed line in RuuviTags file: {}".format(line))
             self.macs_.append(line)
 
     async def __write_macs_to_ruuvitag_file(self):
         async with self.lock:
             with open(self.macs_file_, "w") as stream:
                 for mac in self.macs_:
-                    stream.write(mac+'\n')
+                    stream.write(mac + '\n')
 
     @staticmethod
     def is_legal_mac(mac: str):
         # https://stackoverflow.com/a/7629690
-        return re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", mac.lower())
+        return re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$",
+                        mac.lower())
 
 
 async def add_ruuvitag(mac, ruuvitags):
@@ -72,9 +75,9 @@ async def add_ruuvitag(mac, ruuvitags):
         return {"result": False, "data": "Cannot add empty MAC"}
 
     if not RuuviTags.is_legal_mac(mac):
-        logging.warning("Got illegal RuuviTag MAC "+mac)
+        logging.warning("Got illegal RuuviTag MAC " + mac)
         return {"result": False, "data": "Not a valid MAC address"}
-    logging.info("Adding RuuviTag "+mac)
+    logging.info("Adding RuuviTag " + mac)
     ret = await ruuvitags.add_mac(mac)
     if ret:
         return {"result": True, "data": "RuuviTag " + mac + " added"}
@@ -87,9 +90,9 @@ async def remove_ruuvitag(mac, ruuvitags):
         return {"result": False, "data": "Cannot add empty MAC"}
 
     if not RuuviTags.is_legal_mac(mac):
-        logging.warning("Got illegal RuuviTag MAC "+mac)
+        logging.warning("Got illegal RuuviTag MAC " + mac)
         return {"result": False, "data": "Not a valid MAC address"}
-    logging.info("Removing RuuviTag "+mac)
+    logging.info("Removing RuuviTag " + mac)
     ret = await ruuvitags.remove_mac(mac)
     if ret:
         return {"result": True, "data": "RuuviTag " + mac + " removed"}
@@ -109,29 +112,35 @@ async def get_ruuvi_data(args, ruuvitags):
         for tag in ruuvitags:
             ran = randint(-1, 1)
             data[tag] = {
-                "temperature": 15+3.2*ran,
-                "humidity": 50+5.7*ran,
-                "pressure": 950+20.5*ran,
-                "battery": 3000+5*ran,
-                "measurement_sequence_number": 1234+2*ran
+                "temperature": 15 + 3.2 * ran,
+                "humidity": 50 + 5.7 * ran,
+                "pressure": 950 + 20.5 * ran,
+                "battery": 3000 + 5 * ran,
+                "measurement_sequence_number": 1234 + 2 * ran
             }
         await asyncio.sleep(args.interval)
     else:
         loop = asyncio.get_event_loop()
-        data = await loop.run_in_executor(
-            None, RuuviTagSensor.get_data_for_sensors, ruuvitags, args.interval)
+        data = await loop.run_in_executor(None,
+                                          RuuviTagSensor.get_data_for_sensors,
+                                          ruuvitags, args.interval)
     return data
 
 
 async def send_ruuvi_data(client, ruuvitags, data):
     for mac, data in data.items():
-        await client.buffer_data(
-            {"Temperature"+str(ruuvitags.index(mac)+1): data["temperature"],
-                "Humidity"+str(ruuvitags.index(mac)+1): data["humidity"],
-                "Pressure"+str(ruuvitags.index(mac)+1): data["pressure"],
-                "Battery"+str(ruuvitags.index(mac)+1): data["battery"],
-                "Sequence"+str(ruuvitags.index(mac)+1): data["measurement_sequence_number"]}
-        )
+        await client.buffer_data({
+            "Temperature" + str(ruuvitags.index(mac) + 1):
+            data["temperature"],
+            "Humidity" + str(ruuvitags.index(mac) + 1):
+            data["humidity"],
+            "Pressure" + str(ruuvitags.index(mac) + 1):
+            data["pressure"],
+            "Battery" + str(ruuvitags.index(mac) + 1):
+            data["battery"],
+            "Sequence" + str(ruuvitags.index(mac) + 1):
+            data["measurement_sequence_number"]
+        })
     await client.send_data()
 
 
@@ -148,7 +157,8 @@ async def publish_ruuvi_data(args, client, ruuvitags):
                         await send_ruuvi_data(client, macs, data)
                 else:
                     logging.warning(
-                        "Could not read any RuuviTag data. Please make sure that the specified RuuviTags are within range.")
+                        "Could not read any RuuviTag data. Please make sure that the specified RuuviTags are within range."
+                    )
             else:
                 logging.info("No RuuviTags specified.")
                 await asyncio.sleep(args.interval)
@@ -168,20 +178,45 @@ async def dummy_task():
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--mode', dest='mode', type=str, default='azure',
-                        choices=['azure', 'stdout'],
-                        help='RuuviTag measurements output destination (default: %(default)s)')
-    parser.add_argument('-r', '--ruuvitags', dest='ruuvitags', required=True,
+    parser.add_argument(
+        '-m',
+        '--mode',
+        dest='mode',
+        type=str,
+        default='azure',
+        choices=['azure', 'stdout'],
+        help='RuuviTag measurements output destination (default: %(default)s)')
+    parser.add_argument('-r',
+                        '--ruuvitags',
+                        dest='ruuvitags',
+                        required=True,
                         type=argparse.FileType('r'),
                         help='Path to RuuviTag specification file')
-    parser.add_argument('-c', '--config', dest='config', default=None,
+    parser.add_argument('-c',
+                        '--config',
+                        dest='config',
+                        default=None,
                         help='Path to cloud client configuration file')
-    parser.add_argument('-i', '--interval', dest='interval', type=int, default=60,
-                        help='Interval (seconds) in which RuuviTag data is polled and published (default: %(default)s)')
-    parser.add_argument('-l', '--loglevel', dest='log_level', type=str, default="WARNING",
-                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'],
-                        help='Python logger log level (default: %(default)s)')
-    parser.add_argument('--simulate', action='store_true', default=False,
+    parser.add_argument(
+        '-i',
+        '--interval',
+        dest='interval',
+        type=int,
+        default=60,
+        help=
+        'Interval (seconds) in which RuuviTag data is polled and published (default: %(default)s)'
+    )
+    parser.add_argument(
+        '-l',
+        '--loglevel',
+        dest='log_level',
+        type=str,
+        default="WARNING",
+        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'NOTSET'],
+        help='Python logger log level (default: %(default)s)')
+    parser.add_argument('--simulate',
+                        action='store_true',
+                        default=False,
                         help='Use simulated RuuviTag measurements')
 
     args = parser.parse_args()
@@ -196,9 +231,13 @@ def parse_args():
             logging.warning("Configuration file ignored in 'stdout' mode")
     else:
         if args.config is None:
-            report_and_exit("Configuration file needed when not using 'stdout' mode!", os.EX_USAGE)
+            report_and_exit(
+                "Configuration file needed when not using 'stdout' mode!",
+                os.EX_USAGE)
         if not os.path.exists(args.config):
-            report_and_exit("Given configuration doesn't exist! ({})".format(args.config), os.EX_NOINPUT)
+            report_and_exit(
+                "Given configuration doesn't exist! ({})".format(args.config),
+                os.EX_NOINPUT)
 
     if args.interval < 1:
         report_and_exit("Interval must be greater than zero", os.EX_DATAERR)
@@ -221,15 +260,21 @@ async def main():
         except ConnectionError:
             sys.exit(os.EX_UNAVAILABLE)
 
-        listeners = [asyncio.create_task(client.execute_method_listener(
-            "AddRuuviTag", add_ruuvitag, tags))]
-        listeners.append(asyncio.create_task(client.execute_method_listener(
-            "RemoveRuuviTag", remove_ruuvitag, tags)))
-        listeners.append(asyncio.create_task(client.execute_method_listener(
-            "GetRuuviTags", get_ruuvitags, tags)))
+        listeners = [
+            asyncio.create_task(
+                client.execute_method_listener("AddRuuviTag", add_ruuvitag,
+                                               tags))
+        ]
+        listeners.append(
+            asyncio.create_task(
+                client.execute_method_listener("RemoveRuuviTag",
+                                               remove_ruuvitag, tags)))
+        listeners.append(
+            asyncio.create_task(
+                client.execute_method_listener("GetRuuviTags", get_ruuvitags,
+                                               tags)))
 
-    publisher = [asyncio.create_task(
-        publish_ruuvi_data(args, client, tags))]
+    publisher = [asyncio.create_task(publish_ruuvi_data(args, client, tags))]
 
     tasks = listeners + publisher
     loop = asyncio.get_event_loop()
@@ -241,6 +286,7 @@ async def main():
             functools.partial(cancel_tasks, signame, *tasks))
 
     await asyncio.gather(*tasks)
+
 
 if __name__ == '__main__':
     asyncio.run(main())

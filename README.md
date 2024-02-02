@@ -8,6 +8,7 @@ Python package to push RuuviTag data to a cloud service.
 ## Prerequisites
 * Python (>=3.8)
 * Azure IoT Central application with a [RuuviGate](./resources/azure-iot-central/RuuviGate.json) device
+* Poetry (>=1.5.1)
 
 ## Testing
 ```

@@ -20,9 +20,10 @@ ruuvitag-sensor = "^2.0.0"
 azure-iot-device = "^2.12.0"
 pyyaml = "^6.0"
 
-[tool.poetry.group.test.dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^7.2.1"
 pytest-asyncio = "^0.20.3"
+yapf = "^0.40.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

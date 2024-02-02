@@ -10,11 +10,6 @@ Python package to push RuuviTag data to a cloud service.
 * Azure IoT Central application with a [RuuviGate](./resources/azure-iot-central/RuuviGate.json) device
 * Poetry (>=1.5.1)
 
-## Testing
-```
-> poetry run pytest
-```
-
 ## Installing
 Install local version
 ```
@@ -44,4 +39,21 @@ Examples of configuration files:
 ### Publish RuuviTag data to Azure IoT Central
 ```
 > python3 -m ruuvigate -r /path/to/ruuvitags.yml -c /path/to/azure.yml --interval 5 --loglevel INFO
+```
+
+## Development
+
+### Install dependencies
+```
+> poetry install
+```
+
+### Run unit tests
+```
+> poetry run pytest
+```
+
+### Run formatting
+```
+> poetry run yapf
 ```

@@ -8,10 +8,10 @@ from enum import Enum
 from typing import Any, Callable
 
 # Type information will be there, eventually: https://github.com/Azure/azure-iot-sdk-python/pull/1163
-from azure.iot.device.aio import IoTHubDeviceClient # type: ignore
-from azure.iot.device.aio import ProvisioningDeviceClient # type: ignore
-from azure.iot.device import MethodResponse # type: ignore
-from azure.iot.device import Message # type: ignore
+from azure.iot.device.aio import IoTHubDeviceClient  # type: ignore
+from azure.iot.device.aio import ProvisioningDeviceClient  # type: ignore
+from azure.iot.device import MethodResponse  # type: ignore
+from azure.iot.device import Message  # type: ignore
 
 
 class AzureIOTC:
@@ -42,9 +42,11 @@ class AzureIOTC:
 
     @staticmethod
     def __connected(func: Callable) -> Any:
+
         def wrapper(self, *args, **kwargs):
             assert self.client_ is not None, "AzureIOTC not connected"
             return func(self, *args, **kwargs)
+
         return wrapper
 
     async def connect(self, config_path: str):

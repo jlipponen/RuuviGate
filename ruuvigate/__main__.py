@@ -8,7 +8,7 @@ import signal
 import functools
 from random import randint
 
-from ruuvitag_sensor.ruuvi import RuuviTagSensor # type: ignore
+from ruuvitag_sensor.ruuvi import RuuviTagSensor  # type: ignore
 from ruuvigate.clients import AzureIOTC
 
 

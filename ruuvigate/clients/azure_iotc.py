@@ -5,11 +5,13 @@ import logging
 import asyncio
 import yaml
 from enum import Enum
+from typing import Any, Callable
 
-from azure.iot.device.aio import IoTHubDeviceClient
-from azure.iot.device.aio import ProvisioningDeviceClient
-from azure.iot.device import MethodResponse
-from azure.iot.device import Message
+# Type information will be there, eventually: https://github.com/Azure/azure-iot-sdk-python/pull/1163
+from azure.iot.device.aio import IoTHubDeviceClient # type: ignore
+from azure.iot.device.aio import ProvisioningDeviceClient # type: ignore
+from azure.iot.device import MethodResponse # type: ignore
+from azure.iot.device import Message # type: ignore
 
 
 class AzureIOTC:
@@ -38,12 +40,11 @@ class AzureIOTC:
         self.client_ = None
         self.dataBuf_ = {}
 
-    def __connected(func):
-
+    @staticmethod
+    def __connected(func: Callable) -> Any:
         def wrapper(self, *args, **kwargs):
-            assert self.client_ != None, "AzureIOTC not connected"
+            assert self.client_ is not None, "AzureIOTC not connected"
             return func(self, *args, **kwargs)
-
         return wrapper
 
     async def connect(self, config_path: str):

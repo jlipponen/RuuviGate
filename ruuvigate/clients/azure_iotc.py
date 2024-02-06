@@ -40,8 +40,7 @@ class AzureIOTC:
         self.client_ = None
         self.dataBuf_ = {}
 
-    @staticmethod
-    def __connected(func: Callable) -> Any:
+    def __connected(func: Callable) -> Any:  # type: ignore
 
         def wrapper(self, *args, **kwargs):
             assert self.client_ is not None, "AzureIOTC not connected"

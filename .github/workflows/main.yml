@@ -1,0 +1,41 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  tests:
+    name: ubuntu-latest / ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    env:
+      POETRY_VERSION: 1.5.1
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Poetry
+      run: |
+        pipx install poetry==${{env.POETRY_VERSION}}
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'poetry'
+
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Run yapf
+      run: |
+        poetry run yapf --diff --recursive ruuvigate
+
+    - name: Run mypy
+      run: |
+        poetry run mypy .
+
+    - name: Run pytest
+      run: |
+        poetry run pytest

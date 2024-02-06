@@ -53,6 +53,12 @@ Examples of configuration files:
 > poetry run pytest
 ```
 
+## Typing
+Check typing
+```
+> poetry run mypy .
+```
+
 ### Formatting
 Check formatting
 ```

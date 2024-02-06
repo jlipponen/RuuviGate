@@ -32,6 +32,10 @@ jobs:
       run: |
         poetry run yapf --diff --recursive ruuvigate
 
+    - name: Run mypy
+      run: |
+        poetry run mypy .
+
     - name: Run pytest
       run: |
         poetry run pytest

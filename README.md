@@ -43,6 +43,11 @@ Examples of configuration files:
 
 ## Development
 
+### Run local
+```
+> poetry run python -m ruuvigate -r /path/to/ruuvitags.yml --mode stdout --interval 5 --loglevel INFO --simulate
+```
+
 ### Install dependencies
 ```
 > poetry install

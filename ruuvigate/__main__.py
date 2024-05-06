@@ -9,45 +9,46 @@ import functools
 from random import randint
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor  # type: ignore
-from ruuvigate.clients import AzureIOTC
+
+from .clients.client import FACTORIES, Connectable, DataPublisher
 
 
 class RuuviTags:
     lock = asyncio.Lock()
 
     def __init__(self, path):
-        self.macs_file_ = path
-        self.macs_ = []
+        self._macs_file = path
+        self._macs = []
 
-        if not os.path.exists(self.macs_file_):
-            open(self.macs_file_, "x")
+        if not os.path.exists(self._macs_file):
+            open(self._macs_file, "x")
         else:
             self.__parse_ruuvitag_file()
 
     async def add_mac(self, mac):
         async with self.lock:
-            if self.macs_.count(mac) != 0:
+            if self._macs.count(mac) != 0:
                 return False
             if not self.is_legal_mac(mac):
                 raise ValueError("Malformed MAC: {}".format(mac))
-            self.macs_.append(mac)
+            self._macs.append(mac)
         await self.__write_macs_to_ruuvitag_file()
         return True
 
     async def remove_mac(self, mac):
         async with self.lock:
-            if self.macs_.count(mac) == 0:
+            if self._macs.count(mac) == 0:
                 return False
-            self.macs_.remove(mac)
+            self._macs.remove(mac)
         await self.__write_macs_to_ruuvitag_file()
         return True
 
     async def get_macs(self):
         async with self.lock:
-            return self.macs_
+            return self._macs
 
     def __parse_ruuvitag_file(self):
-        with open(self.macs_file_, "r") as f:
+        with open(self._macs_file, "r") as f:
             lines = f.read().splitlines()
         for line in lines:
             if not line:
@@ -55,12 +56,12 @@ class RuuviTags:
             if not self.is_legal_mac(line):
                 raise ValueError(
                     "Malformed line in RuuviTags file: {}".format(line))
-            self.macs_.append(line)
+            self._macs.append(line)
 
     async def __write_macs_to_ruuvitag_file(self):
         async with self.lock:
-            with open(self.macs_file_, "w") as stream:
-                for mac in self.macs_:
+            with open(self._macs_file, "w") as stream:
+                for mac in self._macs:
                     stream.write(mac + '\n')
 
     @staticmethod
@@ -106,7 +107,7 @@ async def get_ruuvitags(data, ruuvitags):
     return {"result": True, "data": macs}
 
 
-async def get_ruuvi_data(args, ruuvitags):
+async def get_ruuvi_data(args, ruuvitags: RuuviTags):
     if args.simulate:
         data = {}
         for tag in ruuvitags:
@@ -127,9 +128,9 @@ async def get_ruuvi_data(args, ruuvitags):
     return data
 
 
-async def send_ruuvi_data(client, ruuvitags, data):
+async def send_ruuvi_data(publisher: DataPublisher, ruuvitags, data):
     for mac, data in data.items():
-        await client.buffer_data({
+        await publisher.buffer_data({
             "Temperature" + str(ruuvitags.index(mac) + 1):
             data["temperature"],
             "Humidity" + str(ruuvitags.index(mac) + 1):
@@ -141,20 +142,17 @@ async def send_ruuvi_data(client, ruuvitags, data):
             "Sequence" + str(ruuvitags.index(mac) + 1):
             data["measurement_sequence_number"]
         })
-    await client.send_data()
+    await publisher.publish_data()
 
 
-async def publish_ruuvi_data(args, client, ruuvitags):
+async def publish_ruuvi_data(args, publisher: DataPublisher, ruuvitags: RuuviTags):
     while True:
         try:
             macs = await ruuvitags.get_macs()
             if macs:
                 data = await get_ruuvi_data(args, macs)
                 if data:
-                    if args.mode == 'stdout' or client is None:
-                        print(data)
-                    else:
-                        await send_ruuvi_data(client, macs, data)
+                    await send_ruuvi_data(publisher, macs, data)
                 else:
                     logging.warning(
                         "Could not read any RuuviTag data. Please make sure that the specified RuuviTags are within range."
@@ -245,21 +243,14 @@ def parse_args():
     return args
 
 
-async def main():
-    assert sys.version_info >= (3, 8), "Python 3.8 or greater required"
-    args = parse_args()
-    logging.basicConfig(level=args.log_level)
-    tags = RuuviTags(args.ruuvitags.name)
-    client = AzureIOTC() if args.mode == "azure" else None
+async def main(args, tags: RuuviTags, client: Connectable):
+    try:
+        await client.connect(args.config)
+    except ConnectionError:
+        sys.exit(os.EX_UNAVAILABLE)
 
-    if client is None:
-        listeners = [asyncio.create_task(dummy_task())]
-    else:
-        try:
-            await client.connect(args.config)
-        except ConnectionError:
-            sys.exit(os.EX_UNAVAILABLE)
-
+    listeners = []
+    if args.mode == "azure":
         listeners = [
             asyncio.create_task(
                 client.execute_method_listener("AddRuuviTag", add_ruuvitag,
@@ -274,9 +265,7 @@ async def main():
                 client.execute_method_listener("GetRuuviTags", get_ruuvitags,
                                                tags)))
 
-    publisher = [asyncio.create_task(publish_ruuvi_data(args, client, tags))]
-
-    tasks = listeners + publisher
+    tasks = listeners + [asyncio.create_task(publish_ruuvi_data(args, client, tags))]
     loop = asyncio.get_event_loop()
 
     # Signals to initiate a graceful shutdown
@@ -289,5 +278,10 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    assert sys.version_info >= (3, 10), "Python 3.10 or greater required"
+    args = parse_args()
+    logging.basicConfig(level=args.log_level)
+    tags = RuuviTags(args.ruuvitags.name)
+    client = FACTORIES[args.mode]()
+    asyncio.run(main(args, tags, client))
     logging.info("RuuviGate was shutdown")

@@ -7,6 +7,7 @@ import re
 import signal
 import functools
 from random import randint
+from typing import List
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor  # type: ignore
 
@@ -17,15 +18,15 @@ class RuuviTags:
     lock = asyncio.Lock()
 
     def __init__(self, path):
-        self._macs_file = path
-        self._macs = []
+        self._macs_file: str = path
+        self._macs: List[str] = []
 
         if not os.path.exists(self._macs_file):
             open(self._macs_file, "x")
         else:
             self.__parse_ruuvitag_file()
 
-    async def add_mac(self, mac):
+    async def add_mac(self, mac: str) -> bool:
         async with self.lock:
             if self._macs.count(mac) != 0:
                 return False
@@ -35,7 +36,7 @@ class RuuviTags:
         await self.__write_macs_to_ruuvitag_file()
         return True
 
-    async def remove_mac(self, mac):
+    async def remove_mac(self, mac: str) -> bool:
         async with self.lock:
             if self._macs.count(mac) == 0:
                 return False
@@ -43,11 +44,11 @@ class RuuviTags:
         await self.__write_macs_to_ruuvitag_file()
         return True
 
-    async def get_macs(self):
+    async def get_macs(self) -> List[str]:
         async with self.lock:
             return self._macs
 
-    def __parse_ruuvitag_file(self):
+    def __parse_ruuvitag_file(self) -> None:
         with open(self._macs_file, "r") as f:
             lines = f.read().splitlines()
         for line in lines:
@@ -58,14 +59,14 @@ class RuuviTags:
                     "Malformed line in RuuviTags file: {}".format(line))
             self._macs.append(line)
 
-    async def __write_macs_to_ruuvitag_file(self):
+    async def __write_macs_to_ruuvitag_file(self) -> None:
         async with self.lock:
             with open(self._macs_file, "w") as stream:
                 for mac in self._macs:
                     stream.write(mac + '\n')
 
     @staticmethod
-    def is_legal_mac(mac: str):
+    def is_legal_mac(mac: str) -> bool:
         # https://stackoverflow.com/a/7629690
         return re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$",
                         mac.lower())
@@ -107,7 +108,7 @@ async def get_ruuvitags(data, ruuvitags):
     return {"result": True, "data": macs}
 
 
-async def get_ruuvi_data(args, ruuvitags: RuuviTags):
+async def get_ruuvi_data(args, ruuvitags: List[str]):
     if args.simulate:
         data = {}
         for tag in ruuvitags:

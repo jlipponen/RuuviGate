@@ -11,13 +11,13 @@ from typing import List
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor  # type: ignore
 
-from ruuvigate.clients.client import FACTORIES, Connectable, DataPublisher
+from ruuvigate.clients.client import FACTORIES, DataPublisher
 
 
 class RuuviTags:
     lock = asyncio.Lock()
 
-    def __init__(self, path):
+    def __init__(self, path: str):
         self._macs_file: str = path
         self._macs: List[str] = []
 
@@ -68,8 +68,9 @@ class RuuviTags:
     @staticmethod
     def is_legal_mac(mac: str) -> bool:
         # https://stackoverflow.com/a/7629690
-        return re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$",
-                        mac.lower())
+        return bool(
+            re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$",
+                     mac.lower()))
 
 
 async def add_ruuvitag(mac, ruuvitags):
@@ -245,27 +246,24 @@ def parse_args():
     return args
 
 
-async def main(args, tags: RuuviTags, client: Connectable):
+async def main(args, tags: RuuviTags, client: DataPublisher):
     try:
         await client.connect(args.config)
     except ConnectionError:
         sys.exit(os.EX_UNAVAILABLE)
 
-    listeners = []
-    if args.mode == "azure":
-        listeners = [
-            asyncio.create_task(
-                client.execute_method_listener("AddRuuviTag", add_ruuvitag,
-                                               tags))
-        ]
-        listeners.append(
-            asyncio.create_task(
-                client.execute_method_listener("RemoveRuuviTag",
-                                               remove_ruuvitag, tags)))
-        listeners.append(
-            asyncio.create_task(
-                client.execute_method_listener("GetRuuviTags", get_ruuvitags,
-                                               tags)))
+    listeners = [
+        asyncio.create_task(
+            client.execute_method_listener("AddRuuviTag", add_ruuvitag, tags))
+    ]
+    listeners.append(
+        asyncio.create_task(
+            client.execute_method_listener("RemoveRuuviTag", remove_ruuvitag,
+                                           tags)))
+    listeners.append(
+        asyncio.create_task(
+            client.execute_method_listener("GetRuuviTags", get_ruuvitags,
+                                           tags)))
 
     tasks = listeners + [
         asyncio.create_task(publish_ruuvi_data(args, client, tags))

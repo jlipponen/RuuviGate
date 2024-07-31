@@ -3,10 +3,10 @@ from typing import Dict
 
 class StdOut:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._dataBuf: Dict[str, str] = {}
 
-    async def connect(self, _):
+    async def connect(self, _) -> None:
         """
         Dummy implementation for abstract connect method.
 
@@ -18,7 +18,19 @@ class StdOut:
         """
         pass
 
-    async def publish_data(self, data: Dict[str, str] = {}):
+    async def execute_method_listener(self, *_) -> None:
+        """
+        Dummy implementation for abstract execute_method_listener method.
+
+        Args:
+            *_: Placeholder arguments.
+
+        Returns:
+            None
+        """
+        pass
+
+    async def publish_data(self, data: Dict[str, str] = {}) -> None:
         """
         Publishes stored and provided data to the standard output.
 
@@ -32,7 +44,7 @@ class StdOut:
         print(self._dataBuf)
         self._dataBuf.clear()
 
-    async def buffer_data(self, data: Dict[str, str]):
+    async def buffer_data(self, data: Dict[str, str]) -> None:
         """
         Buffer the provided data into the internal data buffer.
 

@@ -26,14 +26,14 @@ class DataPublisher(Protocol):
 
 
 @dataclass
-class ConnectableFactory:
-    con_class: Type[DataPublisher]
+class DataPublisherFactory:
+    publisher: Type[DataPublisher]
 
     def __call__(self) -> DataPublisher:
-        return self.con_class()
+        return self.publisher()
 
 
 FACTORIES = {
-    "azure": ConnectableFactory(AzureIOTC),
-    "stdout": ConnectableFactory(StdOut),
+    "azure": DataPublisherFactory(AzureIOTC),
+    "stdout": DataPublisherFactory(StdOut),
 }

@@ -4,21 +4,18 @@ title: RuuviGate
 ---
 classDiagram
 
-    class Connectable {
-        <<protocol>>
-        +connect(config)*
-    }
-
     class DataPublisher {
         <<protocol>>
+       +connect(config)*
        +publish_data(data)*
        +buffer_data(data)*
+       +execute_method_listener(method_name, handler, cookie)*
     }
 
-    class ConnectableFactory {
+    class DataPublisherFactory {
         <<dataclass>>
-        +Connectable con_class
-        +__call__() Connectable()
+        +DataPublisher publisher
+        +__call__() DataPublisher()
     }
 
     class AzureIOTC {
@@ -37,6 +34,7 @@ classDiagram
         +connect(data)
         +publish_data(data)
         +buffer_data(data)
+        +execute_method_listener(method_name, handler, cookie)
     }
 
     class RuuviTags {
@@ -51,9 +49,7 @@ classDiagram
 
     }
 
-    Connectable <|-- ConnectableFactory : create
-    Connectable <|-- AzureIOTC : adheres
-    Connectable <|-- StdOut : adheres
+    DataPublisher <|-- DataPublisherFactory : create
     DataPublisher <|-- AzureIOTC : adheres
     DataPublisher <|-- StdOut : adheres
 ```

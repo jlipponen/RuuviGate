@@ -2,6 +2,7 @@ from typing import Dict
 
 
 class StdOut:
+
     def __init__(self):
         self._dataBuf: Dict[str, str] = {}
 

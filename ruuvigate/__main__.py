@@ -10,7 +10,7 @@ from random import randint
 
 from ruuvitag_sensor.ruuvi import RuuviTagSensor  # type: ignore
 
-from .clients.client import FACTORIES, Connectable, DataPublisher
+from ruuvigate.clients.client import FACTORIES, Connectable, DataPublisher
 
 
 class RuuviTags:
@@ -145,7 +145,8 @@ async def send_ruuvi_data(publisher: DataPublisher, ruuvitags, data):
     await publisher.publish_data()
 
 
-async def publish_ruuvi_data(args, publisher: DataPublisher, ruuvitags: RuuviTags):
+async def publish_ruuvi_data(args, publisher: DataPublisher,
+                             ruuvitags: RuuviTags):
     while True:
         try:
             macs = await ruuvitags.get_macs()
@@ -265,7 +266,9 @@ async def main(args, tags: RuuviTags, client: Connectable):
                 client.execute_method_listener("GetRuuviTags", get_ruuvitags,
                                                tags)))
 
-    tasks = listeners + [asyncio.create_task(publish_ruuvi_data(args, client, tags))]
+    tasks = listeners + [
+        asyncio.create_task(publish_ruuvi_data(args, client, tags))
+    ]
     loop = asyncio.get_event_loop()
 
     # Signals to initiate a graceful shutdown

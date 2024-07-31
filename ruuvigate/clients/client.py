@@ -1,4 +1,3 @@
-
 from abc import abstractmethod
 from typing import Protocol, Type
 from dataclasses import dataclass

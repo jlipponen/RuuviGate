@@ -31,10 +31,10 @@ classDiagram
     }
 
     class StdOut {
-        +connect(data)
+        +connect(_)
         +publish_data(data)
         +buffer_data(data)
-        +execute_method_listener(method_name, handler, cookie)
+        +execute_method_listener(*_)
     }
 
     class RuuviTags {
@@ -45,7 +45,7 @@ classDiagram
         +get_macs()
         +is_legal_mac(mac)$
         -parse_ruuvitag_file()
-        -write_macs_to_ruuvitag_file
+        -write_macs_to_ruuvitag_file()
 
     }
 

@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 ruuvitag-sensor = "^2.0.0"
 azure-iot-device = "^2.12.0"
 pyyaml = "^6.0"

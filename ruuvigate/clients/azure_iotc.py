@@ -1,3 +1,4 @@
+import atexit
 import os
 import json
 import uuid
@@ -37,19 +38,20 @@ class AzureIOTC:
         ContentType = "application/json"
 
     def __init__(self):
-        self.client_ = None
-        self.dataBuf_ = {}
+        self._client = None
+        self._databuf = {}
+        atexit.register(self.disconnect)
 
     def __connected(func: Callable) -> Any:  # type: ignore
 
         def wrapper(self, *args, **kwargs):
-            assert self.client_ is not None, "AzureIOTC not connected"
+            assert self._client is not None, "AzureIOTC not connected"
             return func(self, *args, **kwargs)
 
         return wrapper
 
     async def connect(self, config_path: str):
-        config = self.parse_config(config_path)
+        config = self.__parse_config(config_path)
 
         # Provision the device
         device_host = await self.__provision_device(
@@ -63,30 +65,30 @@ class AzureIOTC:
 
         # Open the connection
         try:
-            self.client_ = IoTHubDeviceClient.create_from_symmetric_key(
+            self._client = IoTHubDeviceClient.create_from_symmetric_key(
                 symmetric_key=config[self.AzureParams.DeviceKey.value],
                 hostname=device_host,
                 device_id=config[self.AzureParams.DeviceID.value],
             )
-            await self.client_.connect()
+            await self._client.connect()
         except Exception as ex:
             logging.error("Unable to connect to Azure: {} {}".format(
                 type(ex).__name__, ex.args))
-            self.client_ = None
+            self._client = None
             raise ConnectionError()
 
     async def disconnect(self):
-        if self.client_ != None:
+        if self._client != None:
             logging.info("Disconnecting AzureIOTC")
-            await self.client_.shutdown()
-            self.client_ = None
+            await self._client.shutdown()
+            self._client = None
 
     @__connected
     async def execute_method_listener(self, method_name, handler, cookie):
         logging.info("Executing a listener for \"" + method_name + "\" method")
         while True:
             try:
-                method_request = await self.client_.receive_method_request(
+                method_request = await self._client.receive_method_request(
                     self.MethodNames.get(method_name))
                 logging.info("Received method request \"" + method_name + "\"")
 
@@ -98,7 +100,7 @@ class AzureIOTC:
                 command_response = MethodResponse.create_from_method_request(
                     method_request, response_status, response_payload)
                 try:
-                    await self.client_.send_method_response(command_response)
+                    await self._client.send_method_response(command_response)
                 except RuntimeError:
                     logging.error(
                         "Responding to command request \"{}\" failed".format(
@@ -108,28 +110,28 @@ class AzureIOTC:
                 break
 
     @__connected
-    async def send_data(self, data={}):
+    async def publish_data(self, data={}):
         """
             param data: dictionary of values to send
         """
-        self.dataBuf_.update(data)
+        self._databuf.update(data)
 
-        msg = Message(json.dumps(self.dataBuf_))
+        msg = Message(json.dumps(self._databuf))
         msg.content_encoding = AzureIOTC.Message.Encoding.value
         msg.content_type = AzureIOTC.Message.ContentType.value
         msg.message_id = uuid.uuid4()
 
-        await self.client_.send_message(msg)
+        await self._client.send_message(msg)
         logging.info("Sent message " + str(msg) + " with id " +
                      str(msg.message_id))
 
-        self.dataBuf_.clear()
+        self._databuf.clear()
 
     async def buffer_data(self, data={}):
-        self.dataBuf_.update(data)
+        self._databuf.update(data)
 
     @staticmethod
-    def parse_config(config_path: str):
+    def __parse_config(config_path: str):
         if not os.path.exists(config_path):
             logging.error("Can't find file: " + config_path)
             raise FileNotFoundError(config_path)

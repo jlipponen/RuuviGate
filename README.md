@@ -1,17 +1,17 @@
 # RuuviGate
-Python package to push RuuviTag data to a cloud service.
+Python package to publish RuuviTag data to cloud services.
 
 ## Acknowledgments
 * [RuuviTag Sensor](https://github.com/ttu/ruuvitag-sensor) by _ttu_ used to poll RuuviTag data
-* [Azure IoT SDKs for Python](https://github.com/Azure/azure-iot-sdk-python) used to publish the RuuviTag data
+* [Azure IoT SDKs for Python](https://github.com/Azure/azure-iot-sdk-python) used to publish RuuviTag data to Azure
 
 ## Prerequisites
-* Python (>=3.8)
-* Azure IoT Central application with a [RuuviGate](./resources/azure-iot-central/RuuviGate.json) device
+* Python (>=3.10)
 * Poetry (>=1.5.1)
+* Azure IoT Central application with a [RuuviGate](./resources/azure-iot-central/RuuviGate.json) device
 
-## Installing
-Install local version
+## Installation
+Install locally build version
 ```
 > poetry build
 > pip install ./dist/ruuvigate-<version>-py3-none-any.whl
@@ -26,12 +26,12 @@ Examples of configuration files:
 - [ruuvitags.yml](./resources/ruuvitags.yml)
 - [azure.yml](./resources/azure-iot-central/azure.yml)
 
-### Produce sample data to stdout
+### Write sample data to stdout
 ```
 > python3 -m ruuvigate -r /path/to/ruuvitags.yml --mode stdout --interval 5 --loglevel INFO --simulate
 ```
 
-### Produce sample data to Azure IoT Central
+### Publish sample data to Azure IoT Central
 ```
 > python3 -m ruuvigate -r /path/to/ruuvitags.yml -c /path/to/azure.yml --interval 5 --loglevel INFO --simulate
 ```
@@ -42,10 +42,14 @@ Examples of configuration files:
 ```
 
 ## Development
-
 ### Install dependencies
 ```
 > poetry install
+```
+
+### Run local
+```
+> poetry run python -m ruuvigate -r /path/to/ruuvitags.yml --mode stdout --interval 5 --loglevel INFO --simulate
 ```
 
 ### Run unit tests

@@ -1,0 +1,31 @@
+{
+    "name": "RuuviGate Dev Container",
+    "remoteUser": "${localEnv:USER}",
+    "containerUser": "${localEnv:USER}",
+    "build": {
+      "dockerfile": "Dockerfile",
+      "args": {
+        "REMOTE_USER": "${localEnv:USER}",
+        "REMOTE_UID": "${localEnv:REMOTE_UID:1000}",
+        "REMOTE_GID": "${localEnv:REMOTE_GID:1000}"
+      }
+    },
+    "customizations": {
+      "vscode": {
+        "settings": {
+          "terminal.integrated.shell.linux": "/bin/bash",
+          "terminal.integrated.defaultProfile.linux": "bash"
+        },
+        "extensions": [
+          "ms-python.python",
+          "ms-python.debugpy",
+          "esbenp.prettier-vscode",
+          "GitHub.copilot"
+        ]
+      }
+    },
+    "mounts": [
+      "source=${localEnv:HOME}/.ssh,target=/home/${localEnv:USER}/.ssh,type=bind,consistency=cached"
+    ],
+    "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
+  }
